@@ -1,22 +1,42 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Building2,
   Columns3,
   History,
   Inbox,
+  LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
   Search,
   Ticket,
+  UserRound,
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { dashboardNavItems, type DashboardNavIcon } from "@/lib/nav";
 import { useAuthUser } from "@/hooks/use-auth-user";
+import { clearAuthSession } from "@/lib/auth";
+import { toastSuccess } from "@/lib/toast";
 import { LogoIcon } from "@/components/templates/triggerly/sections/logo";
-import { Badge } from "@/components/ui/badge";
+import { UserAvatar } from "@/components/vsop/shared/user-avatar";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const iconMap: Record<DashboardNavIcon, React.ElementType> = {
   inbox: Inbox,
@@ -30,57 +50,122 @@ const iconMap: Record<DashboardNavIcon, React.ElementType> = {
 export function SidebarNav({
   className,
   onNavigate,
+  collapsed = false,
+  onToggleCollapsed,
 }: {
   className?: string;
   onNavigate?: () => void;
+  collapsed?: boolean;
+  onToggleCollapsed?: () => void;
 }) {
   const pathname = usePathname();
-  const { user, isAdmin } = useAuthUser();
+  const router = useRouter();
+  const { user } = useAuthUser();
   const role = user?.role ?? "DEVELOPER";
 
   const visibleItems = dashboardNavItems.filter((item) =>
     (item.roles as readonly string[]).includes(role),
   );
 
+  function handleLogout() {
+    clearAuthSession();
+    toastSuccess("Signed out", { description: "See you next time." });
+    router.replace("/login");
+  }
+
   return (
-    <aside
+    <div
       className={cn(
-        "flex h-full w-[220px] shrink-0 flex-col border-r border-border/50 bg-card/80 backdrop-blur-sm lg:w-60",
+        "flex h-full w-full flex-col bg-transparent",
         className,
       )}
     >
-      <div className="border-b border-border/50 p-3">
+      {/* Brand + collapse */}
+      <div
+        className={cn(
+          "flex shrink-0 items-center gap-1 px-2 pt-3",
+          collapsed ? "flex-col gap-2" : "justify-between px-3",
+        )}
+      >
         <Link
           href="/dashboard"
-          className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-muted/50"
+          onClick={onNavigate}
+          className={cn(
+            "flex items-center gap-2.5 rounded-xl transition-colors hover:bg-muted/40",
+            collapsed ? "size-10 justify-center" : "min-w-0 flex-1 px-2 py-2",
+          )}
         >
-          <LogoIcon className="size-5" />
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-foreground">
-              VeriTrack VSOP
-            </p>
-            <p className="truncate text-[10px] text-muted-foreground">
-              Support operations
-            </p>
-          </div>
+          <LogoIcon className="size-5 shrink-0" />
+          {!collapsed ? (
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold tracking-tight text-foreground">
+                VeriTrack VSOP
+              </p>
+              <p className="truncate text-[10px] text-muted-foreground">
+                Support operations
+              </p>
+            </div>
+          ) : null}
         </Link>
+
+        {onToggleCollapsed ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="shrink-0 text-muted-foreground"
+                onClick={onToggleCollapsed}
+                aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              >
+                {collapsed ? (
+                  <PanelLeftOpen className="size-4" />
+                ) : (
+                  <PanelLeftClose className="size-4" />
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              {collapsed ? "Expand" : "Collapse"}
+            </TooltipContent>
+          </Tooltip>
+        ) : null}
       </div>
 
-      <div className="p-3">
-        <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-muted/30 px-2.5 py-2 text-xs text-muted-foreground">
-          <Search className="size-3.5 shrink-0" />
-          <span className="truncate">Search tickets…</span>
-          <Badge
-            variant="secondary"
-            className="ml-auto hidden px-1.5 py-0 text-[10px] sm:inline-flex"
-          >
-            ⌘K
-          </Badge>
-        </div>
+      {/* Search — icon only when collapsed */}
+      <div className={cn("shrink-0 px-2 pt-3", !collapsed && "px-3")}>
+        {collapsed ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                className="flex size-10 w-full items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+                aria-label="Search"
+              >
+                <Search className="size-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right">Search</TooltipContent>
+          </Tooltip>
+        ) : (
+          <div className="flex items-center gap-2 rounded-xl border border-border/40 bg-muted/20 px-2.5 py-2 text-xs text-muted-foreground">
+            <Search className="size-3.5 shrink-0" />
+            <span className="truncate">Search…</span>
+            <kbd className="ml-auto rounded-md bg-muted/50 px-1.5 py-0.5 text-[10px]">
+              ⌘K
+            </kbd>
+          </div>
+        )}
       </div>
 
-      <ScrollArea className="flex-1 px-3">
-        <nav className="space-y-0.5 pb-3">
+      <ScrollArea className="min-h-0 flex-1 px-2 py-3">
+        {!collapsed ? (
+          <p className="mb-2 px-2.5 text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground/70">
+            Platform
+          </p>
+        ) : null}
+        <nav className={cn("space-y-1", collapsed && "flex flex-col items-center")}>
           {visibleItems.map((item) => {
             const Icon = iconMap[item.icon];
             const active =
@@ -88,16 +173,18 @@ export function SidebarNav({
                 ? pathname === item.href
                 : pathname.startsWith(item.href);
 
-            return (
+            const link = (
               <Link
-                key={item.href}
                 href={item.href}
                 onClick={onNavigate}
                 className={cn(
-                  "flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs transition-colors",
+                  "flex items-center rounded-xl text-sm transition-colors",
+                  collapsed
+                    ? "size-10 justify-center"
+                    : "gap-2.5 px-2.5 py-2",
                   active
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium ring-1 ring-sidebar-ring/20"
-                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                    ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+                    : "text-muted-foreground hover:bg-muted/40 hover:text-foreground",
                 )}
               >
                 <Icon
@@ -106,31 +193,87 @@ export function SidebarNav({
                     active ? "text-sidebar-primary" : "",
                   )}
                 />
-                <span>{item.title}</span>
+                {!collapsed ? <span>{item.title}</span> : null}
               </Link>
+            );
+
+            if (!collapsed) {
+              return (
+                <div key={item.href}>{link}</div>
+              );
+            }
+
+            return (
+              <Tooltip key={item.href}>
+                <TooltipTrigger asChild>{link}</TooltipTrigger>
+                <TooltipContent side="right">{item.title}</TooltipContent>
+              </Tooltip>
             );
           })}
         </nav>
       </ScrollArea>
 
-      <div className="border-t border-border/50 p-3">
-        {isAdmin ? (
-          <div className="rounded-lg border border-indigo-500/15 bg-indigo-500/5 px-2.5 py-2 text-xs text-indigo-200/80">
-            <span className="font-medium">Client intake</span>
-            <p className="mt-0.5 text-[11px] text-indigo-200/60">
-              Share <code className="text-indigo-100">/submit?portal=slug</code>{" "}
-              with each portal client.
-            </p>
-          </div>
-        ) : (
-          <div className="rounded-lg border border-border/40 bg-muted/20 px-2.5 py-2 text-xs text-muted-foreground">
-            <span className="font-medium text-foreground">Developer workspace</span>
-            <p className="mt-0.5 text-[11px]">
-              Update ticket status, notes, and resolutions.
-            </p>
-          </div>
+      <div
+        className={cn(
+          "shrink-0 space-y-2 p-2 pb-3",
+          !collapsed && "px-3",
         )}
+      >
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              className={cn(
+                "h-auto rounded-xl hover:bg-muted/40",
+                collapsed
+                  ? "size-10 justify-center p-0"
+                  : "w-full justify-start gap-2.5 px-2 py-2",
+              )}
+            >
+              <UserAvatar
+                name={user?.name}
+                email={user?.email}
+                role={user?.role}
+                size={collapsed ? 28 : 28}
+              />
+              {!collapsed ? (
+                <span className="min-w-0 flex-1 text-left">
+                  <span className="block truncate text-xs font-medium text-foreground">
+                    {user?.name ?? "Team member"}
+                  </span>
+                  <span className="block truncate text-[10px] text-muted-foreground">
+                    {user?.role ?? "VSOP"}
+                  </span>
+                </span>
+              ) : null}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align={collapsed ? "center" : "start"}
+            side="top"
+            className="w-56"
+          >
+            <DropdownMenuLabel className="font-normal">
+              <div className="flex flex-col gap-0.5">
+                <p className="text-sm font-medium">{user?.name}</p>
+                <p className="text-xs text-muted-foreground">{user?.email}</p>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard/profile" onClick={onNavigate}>
+                <UserRound />
+                Profile
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem variant="destructive" onClick={handleLogout}>
+              <LogOut />
+              Sign out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
-    </aside>
+    </div>
   );
 }
