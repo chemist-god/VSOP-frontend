@@ -148,3 +148,10 @@ export interface TeamMemberDetail {
 export function fetchTeamMemberDetail(id: string) {
   return apiFetch<TeamMemberDetail>(`/users/${id}`);
 }
+
+export function updateTeamMemberStatus(id: string, isActive: boolean) {
+  return apiFetch<{ id: string; isActive: boolean }>(`/users/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ isActive }),
+  });
+}
