@@ -10,7 +10,8 @@ import { toastError, toastSuccess } from "@/lib/toast";
 import { ApiError } from "@/lib/api";
 import { UserAvatar } from "@/components/vsop/shared/user-avatar";
 import { PasswordInput } from "@/components/vsop/auth/password-input";
-import { LogoIcon } from "@/components/templates/triggerly/sections/logo";
+import { VsopLogo } from "@/components/templates/triggerly/sections/logo";
+import { ThemeToggle } from "@/components/vsop/shared/theme-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -169,9 +170,11 @@ export default function AcceptInvitePage() {
     <div className="relative min-h-screen overflow-hidden bg-background">
       <div className="hero-glow opacity-50" />
       <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-lg flex-col px-4 py-8">
-        <div className="mb-8 flex items-center gap-2 text-sm font-semibold">
-          <LogoIcon />
-          VeriTrack VSOP
+        <div className="mb-8 flex items-center justify-between gap-3">
+          <div className="min-w-0" aria-label="VSOP">
+            <VsopLogo size="lg" className="max-w-[9rem] sm:max-w-[11rem]" />
+          </div>
+          <ThemeToggle className="size-8 rounded-lg" />
         </div>
         <Suspense fallback={<Skeleton className="h-80 w-full rounded-2xl" />}>
           <AcceptInviteForm />
