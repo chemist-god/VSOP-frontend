@@ -20,8 +20,9 @@ import { dashboardNavItems, type DashboardNavIcon } from "@/lib/nav";
 import { useAuthUser } from "@/hooks/use-auth-user";
 import { clearAuthSession } from "@/lib/auth";
 import { toastSuccess } from "@/lib/toast";
-import { LogoIcon } from "@/components/templates/triggerly/sections/logo";
+import { LogoIcon, VsopLogo } from "@/components/templates/triggerly/sections/logo";
 import { UserAvatar } from "@/components/vsop/shared/user-avatar";
+import { ThemeToggle } from "@/components/vsop/shared/theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -91,21 +92,23 @@ export function SidebarNav({
           href="/dashboard"
           onClick={onNavigate}
           className={cn(
-            "flex items-center gap-2.5 rounded-xl transition-colors hover:bg-muted/40",
-            collapsed ? "size-10 justify-center" : "min-w-0 flex-1 px-2 py-2",
+            "flex items-center rounded-xl transition-colors hover:bg-muted/40",
+            collapsed
+              ? "size-10 justify-center"
+              : "min-w-0 flex-1 gap-2 px-1.5 py-1.5",
           )}
+          aria-label="VSOP dashboard"
         >
-          <LogoIcon className="size-5 shrink-0" />
-          {!collapsed ? (
+          {collapsed ? (
+            <LogoIcon className="size-9" />
+          ) : (
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold tracking-tight text-foreground">
-                VeriTrack VSOP
-              </p>
-              <p className="truncate text-[10px] text-muted-foreground">
+              <VsopLogo size="md" className="max-w-[9.5rem]" />
+              <p className="mt-0.5 truncate pl-0.5 text-[10px] text-muted-foreground">
                 Support operations
               </p>
             </div>
-          ) : null}
+          )}
         </Link>
 
         {onToggleCollapsed ? (
@@ -219,6 +222,11 @@ export function SidebarNav({
           !collapsed && "px-3",
         )}
       >
+        <ThemeToggle
+          variant={collapsed ? "icon" : "row"}
+          showTooltip={collapsed}
+          className={cn(collapsed && "mx-auto")}
+        />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
