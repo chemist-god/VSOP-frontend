@@ -3,42 +3,26 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-import { AlertCircle, ChevronLeft, ChevronRight, History, RefreshCw } from "lucide-react";
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  History,
+  RefreshCw,
+} from "lucide-react";
 import { fetchAuditLogs, fetchInsights } from "@/lib/api/audit";
 import { queryKeys } from "@/lib/query-keys";
 import { formatDateTime } from "@/lib/format";
+import { InsightsPanel } from "@/components/vsop/audit/insights-panel";
 import { PageHeader } from "@/components/vsop/shared/page-header";
 import { EmptyState } from "@/components/vsop/shared/empty-state";
 import { UserAvatar } from "@/components/vsop/shared/user-avatar";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const PAGE_SIZE = 20;
-
-const SEVERITY_COLORS: Record<string, string> = {
-  CRITICAL: "#f87171",
-  HIGH: "#fb923c",
-  MEDIUM: "#fbbf24",
-  LOW: "#34d399",
-  UNSET: "#71717a",
-};
 
 function actionLabel(action: string) {
   return action.replaceAll(".", " · ").replaceAll("_", " ");
@@ -57,7 +41,6 @@ export function AuditView() {
     queryFn: fetchInsights,
   });
 
-  const insights = insightsQuery.data;
   const audit = auditQuery.data;
   const items = audit?.items ?? [];
 
@@ -70,6 +53,7 @@ export function AuditView() {
           <Button
             variant="outline"
             size="sm"
+            className="rounded-lg"
             onClick={() => {
               auditQuery.refetch();
               insightsQuery.refetch();
@@ -87,13 +71,26 @@ export function AuditView() {
         }
       />
 
-      <Tabs defaultValue="activity" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="activity">Activity</TabsTrigger>
-          <TabsTrigger value="insights">Insights</TabsTrigger>
+      <Tabs defaultValue="activity" className="space-y-5">
+        <TabsList className="h-9 rounded-xl bg-muted/70 p-1">
+          <TabsTrigger value="activity" className="rounded-lg px-3">
+            Activity
+          </TabsTrigger>
+          <TabsTrigger value="insights" className="rounded-lg px-3">
+            Insights
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="activity" className="space-y-4">
+        <TabsContent value="insights" className="space-y-4 outline-none">
+          <InsightsPanel
+            data={insightsQuery.data}
+            isLoading={insightsQuery.isLoading}
+            isError={insightsQuery.isError}
+            onRetry={() => insightsQuery.refetch()}
+          />
+        </TabsContent>
+
+        <TabsContent value="activity" className="space-y-4 outline-none">
           {auditQuery.isLoading ? (
             <div className="space-y-2">
               {Array.from({ length: 6 }).map((_, i) => (
@@ -197,135 +194,6 @@ export function AuditView() {
                 </Button>
               </div>
             </div>
-          ) : null}
-        </TabsContent>
-
-        <TabsContent value="insights" className="space-y-4">
-          {insightsQuery.isLoading ? (
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-24 rounded-xl" />
-              ))}
-            </div>
-          ) : null}
-
-          {insights ? (
-            <>
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                {[
-                  { label: "Total tickets", value: insights.totals.tickets },
-                  { label: "Open", value: insights.totals.open },
-                  { label: "In progress", value: insights.totals.inProgress },
-                  {
-                    label: "Resolved (7d)",
-                    value: insights.totals.resolvedLast7Days,
-                  },
-                ].map((stat) => (
-                  <Card
-                    key={stat.label}
-                    className="border-border/50 bg-card/50"
-                  >
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-xs font-normal text-muted-foreground">
-                        {stat.label}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-2xl font-medium tracking-tight">
-                        {stat.value}
-                      </p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-
-              <div className="grid gap-4 xl:grid-cols-2">
-                <Card className="border-border/50 bg-card/40">
-                  <CardHeader>
-                    <CardTitle className="text-base">
-                      Tickets by portal
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={insights.byPortal}>
-                        <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-                        <XAxis dataKey="slug" tick={{ fontSize: 11 }} />
-                        <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                        <Tooltip />
-                        <Bar
-                          dataKey="count"
-                          fill="oklch(0.65 0.18 275)"
-                          radius={[6, 6, 0, 0]}
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-border/50 bg-card/40">
-                  <CardHeader>
-                    <CardTitle className="text-base">By severity</CardTitle>
-                  </CardHeader>
-                  <CardContent className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={insights.bySeverity}
-                          dataKey="count"
-                          nameKey="severity"
-                          innerRadius={55}
-                          outerRadius={85}
-                          paddingAngle={3}
-                        >
-                          {insights.bySeverity.map((entry) => (
-                            <Cell
-                              key={entry.severity}
-                              fill={
-                                SEVERITY_COLORS[entry.severity] ?? "#71717a"
-                              }
-                            />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-border/50 bg-card/40 xl:col-span-2">
-                  <CardHeader>
-                    <CardTitle className="text-base">
-                      14-day volume trend
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="h-72">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={insights.trend}>
-                        <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-                        <XAxis dataKey="date" tick={{ fontSize: 10 }} />
-                        <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                        <Tooltip />
-                        <Line
-                          type="monotone"
-                          dataKey="created"
-                          stroke="#818cf8"
-                          strokeWidth={2}
-                          dot={false}
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="resolved"
-                          stroke="#34d399"
-                          strokeWidth={2}
-                          dot={false}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-              </div>
-            </>
           ) : null}
         </TabsContent>
       </Tabs>
