@@ -15,6 +15,7 @@ import { ApiError } from "@/lib/api";
 import { AdminOnlyNotice } from "@/components/vsop/shared/admin-only-notice";
 import { EmptyState } from "@/components/vsop/shared/empty-state";
 import { PageHeader } from "@/components/vsop/shared/page-header";
+import { DeactivatePortalConfirmModal } from "@/components/vsop/portals/deactivate-portal-confirm-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,12 +41,18 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuthUser } from "@/hooks/use-auth-user";
+import { cn } from "@/lib/utils";
 
 export function PortalsView() {
   const { isAdmin } = useAuthUser();
   const queryClient = useQueryClient();
   const [registerOpen, setRegisterOpen] = useState(false);
   const [apiKeyReveal, setApiKeyReveal] = useState<string | null>(null);
+  const [portalToDeactivate, setPortalToDeactivate] = useState<{
+    id: string;
+    companyName: string;
+    slug: string;
+  } | null>(null);
   const [form, setForm] = useState({
     slug: "",
     companyName: "",
@@ -89,8 +96,19 @@ export function PortalsView() {
       id: string;
       status: "ACTIVE" | "INACTIVE";
     }) => updatePortalStatus(id, status),
-    onSuccess: () => {
-      toastSuccess("Portal status updated");
+    onSuccess: (_data, variables) => {
+      toastSuccess(
+        variables.status === "INACTIVE"
+          ? "Portal deactivated"
+          : "Portal activated",
+        variables.status === "INACTIVE"
+          ? {
+              description:
+                "Ticket intake for this company is paused until reactivated.",
+            }
+          : undefined,
+      );
+      setPortalToDeactivate(null);
       queryClient.invalidateQueries({ queryKey: queryKeys.portals.all });
     },
     onError: (error) => {
@@ -328,22 +346,40 @@ export function PortalsView() {
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            statusMutation.mutate({
-                              id: portal.id,
-                              status:
-                                portal.status === "ACTIVE"
-                                  ? "INACTIVE"
-                                  : "ACTIVE",
-                            })
-                          }
-                        >
-                          {portal.status === "ACTIVE" ? "Deactivate" : "Activate"}
-                        </Button>
+                      <div className="flex flex-wrap justify-end gap-2">
+                        {portal.status === "ACTIVE" ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className={cn(
+                              "border-destructive/25 bg-destructive/10 text-destructive",
+                              "hover:bg-destructive/15 hover:text-destructive",
+                            )}
+                            onClick={() =>
+                              setPortalToDeactivate({
+                                id: portal.id,
+                                companyName: portal.companyName,
+                                slug: portal.slug,
+                              })
+                            }
+                          >
+                            Deactivate
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={statusMutation.isPending}
+                            onClick={() =>
+                              statusMutation.mutate({
+                                id: portal.id,
+                                status: "ACTIVE",
+                              })
+                            }
+                          >
+                            Activate
+                          </Button>
+                        )}
                         <Button
                           variant="outline"
                           size="sm"
@@ -360,6 +396,23 @@ export function PortalsView() {
           </div>
         </div>
       ) : null}
+
+      <DeactivatePortalConfirmModal
+        open={Boolean(portalToDeactivate)}
+        companyName={portalToDeactivate?.companyName ?? null}
+        slug={portalToDeactivate?.slug ?? null}
+        isPending={statusMutation.isPending}
+        onClose={() => {
+          if (!statusMutation.isPending) setPortalToDeactivate(null);
+        }}
+        onConfirm={() => {
+          if (!portalToDeactivate) return;
+          statusMutation.mutate({
+            id: portalToDeactivate.id,
+            status: "INACTIVE",
+          });
+        }}
+      />
     </div>
   );
 }
