@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { LogoIcon } from "@/components/templates/triggerly/sections/logo";
+import { VsopLogo } from "@/components/templates/triggerly/sections/logo";
 
 export const metadata: Metadata = {
   title: "Report an issue — VeriTrack Support",
@@ -20,10 +20,10 @@ export default function SubmitLayout({
         <header className="mb-8 flex items-center justify-between gap-4">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-foreground transition-opacity hover:opacity-80"
+            className="inline-flex min-w-0 items-center transition-opacity hover:opacity-80"
+            aria-label="VSOP support"
           >
-            <LogoIcon />
-            VeriTrack Support
+            <VsopLogo size="md" className="max-w-[8.5rem] sm:max-w-[10rem]" />
           </Link>
           <span className="text-xs text-muted-foreground">Client intake</span>
         </header>
