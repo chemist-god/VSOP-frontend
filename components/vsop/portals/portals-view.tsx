@@ -16,9 +16,12 @@ import { AdminOnlyNotice } from "@/components/vsop/shared/admin-only-notice";
 import { EmptyState } from "@/components/vsop/shared/empty-state";
 import { PageHeader } from "@/components/vsop/shared/page-header";
 import { DeactivatePortalConfirmModal } from "@/components/vsop/portals/deactivate-portal-confirm-modal";
+import {
+  PortalApiKeyReveal,
+  type PortalApiKeyRevealData,
+} from "@/components/vsop/portals/portal-api-key-reveal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -47,7 +50,8 @@ export function PortalsView() {
   const { isAdmin } = useAuthUser();
   const queryClient = useQueryClient();
   const [registerOpen, setRegisterOpen] = useState(false);
-  const [apiKeyReveal, setApiKeyReveal] = useState<string | null>(null);
+  const [apiKeyReveal, setApiKeyReveal] =
+    useState<PortalApiKeyRevealData | null>(null);
   const [portalToDeactivate, setPortalToDeactivate] = useState<{
     id: string;
     companyName: string;
@@ -68,9 +72,16 @@ export function PortalsView() {
 
   const registerMutation = useMutation({
     mutationFn: registerPortal,
-    onSuccess: (result) => {
-      toastSuccess("Portal registered");
-      setApiKeyReveal(result.apiKey);
+    onSuccess: (result, variables) => {
+      toastSuccess("Portal registered", {
+        description: `${variables.companyName} is ready for intake.`,
+      });
+      setApiKeyReveal({
+        apiKey: result.apiKey,
+        companyName: variables.companyName.trim(),
+        slug: result.slug,
+        source: "registered",
+      });
       setRegisterOpen(false);
       setForm({
         slug: "",
@@ -120,10 +131,24 @@ export function PortalsView() {
   });
 
   const rotateMutation = useMutation({
-    mutationFn: rotatePortalKey,
+    mutationFn: async (portal: {
+      id: string;
+      companyName: string;
+      slug: string;
+    }) => {
+      const result = await rotatePortalKey(portal.id);
+      return { ...result, companyName: portal.companyName, slug: portal.slug };
+    },
     onSuccess: (result) => {
-      setApiKeyReveal(result.apiKey);
-      toastSuccess("API key rotated");
+      setApiKeyReveal({
+        apiKey: result.apiKey,
+        companyName: result.companyName,
+        slug: result.slug,
+        source: "rotated",
+      });
+      toastSuccess("API key rotated", {
+        description: `New key issued for ${result.companyName}.`,
+      });
     },
     onError: (error) => {
       toastError(
@@ -239,29 +264,10 @@ export function PortalsView() {
       />
 
       {apiKeyReveal ? (
-        <Card className="border-amber-500/30 bg-amber-500/5">
-          <CardHeader>
-            <CardTitle className="text-base text-amber-200">
-              API key — copy now
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <code className="flex-1 break-all rounded-lg bg-background px-3 py-2 text-xs">
-              {apiKeyReveal}
-            </code>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={async () => {
-                await navigator.clipboard.writeText(apiKeyReveal);
-                toastSuccess("API key copied");
-              }}
-            >
-              <Copy />
-              Copy
-            </Button>
-          </CardContent>
-        </Card>
+        <PortalApiKeyReveal
+          data={apiKeyReveal}
+          onDismiss={() => setApiKeyReveal(null)}
+        />
       ) : null}
 
       {portalsQuery.isLoading ? (
@@ -383,7 +389,14 @@ export function PortalsView() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => rotateMutation.mutate(portal.id)}
+                          disabled={rotateMutation.isPending}
+                          onClick={() =>
+                            rotateMutation.mutate({
+                              id: portal.id,
+                              companyName: portal.companyName,
+                              slug: portal.slug,
+                            })
+                          }
                         >
                           Rotate key
                         </Button>
