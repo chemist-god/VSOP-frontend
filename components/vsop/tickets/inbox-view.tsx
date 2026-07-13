@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, Columns3, Inbox, RefreshCw } from "lucide-react";
@@ -11,6 +11,7 @@ import { queryKeys } from "@/lib/query-keys";
 import type { TicketFilters as TicketFilterValues } from "@/lib/types/tickets";
 import { PageHeader } from "@/components/vsop/shared/page-header";
 import { EmptyState } from "@/components/vsop/shared/empty-state";
+import { TablePagination } from "@/components/vsop/shared/table-pagination";
 import { TicketFilters } from "@/components/vsop/tickets/ticket-filters";
 import { TicketTable } from "@/components/vsop/tickets/ticket-table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -18,6 +19,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuthUser } from "@/hooks/use-auth-user";
+
+const PAGE_SIZE = 10;
 
 type InboxViewProps = {
   title?: string;
@@ -32,6 +35,7 @@ export function InboxView({
 }: InboxViewProps) {
   const { isAdmin } = useAuthUser();
   const [filters, setFilters] = useState<TicketFilterValues>(defaultFilters);
+  const [page, setPage] = useState(1);
 
   const filterQuery = useMemo(
     () => ({
@@ -42,6 +46,10 @@ export function InboxView({
     }),
     [filters],
   );
+
+  useEffect(() => {
+    setPage(1);
+  }, [filterQuery]);
 
   const ticketsQuery = useQuery({
     queryKey: queryKeys.tickets.list(filterQuery),
@@ -71,6 +79,13 @@ export function InboxView({
   }, [portalsQuery.data]);
 
   const tickets = ticketsQuery.data ?? [];
+  const totalPages = Math.max(1, Math.ceil(tickets.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pagedTickets = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return tickets.slice(start, start + PAGE_SIZE);
+  }, [tickets, currentPage]);
+
   const stats = useMemo(
     () => ({
       open: tickets.filter((ticket) => ticket.status === "OPEN").length,
@@ -204,7 +219,16 @@ export function InboxView({
       ) : null}
 
       {!ticketsQuery.isLoading && !ticketsQuery.isError && tickets.length > 0 ? (
-        <TicketTable tickets={tickets} portalsById={portalsById} />
+        <div className="space-y-4">
+          <TicketTable tickets={pagedTickets} portalsById={portalsById} />
+          <TablePagination
+            page={currentPage}
+            totalPages={totalPages}
+            totalItems={tickets.length}
+            pageSize={PAGE_SIZE}
+            onPageChange={setPage}
+          />
+        </div>
       ) : null}
     </div>
   );
