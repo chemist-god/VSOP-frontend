@@ -72,7 +72,11 @@ export function KanbanCard({
       <div className="mt-3 flex items-center justify-between gap-2 border-t border-border/40 pt-2.5">
         <div className="min-w-0">
           <p className="truncate text-[11px] font-medium text-muted-foreground">
-            {portal?.companyName ?? "Unknown portal"}
+            {ticket.source === "INTERNAL"
+              ? portal?.companyName
+                ? `Internal · ${portal.companyName}`
+                : "Internal"
+              : (portal?.companyName ?? "Portal")}
           </p>
           <p className="text-[10px] text-muted-foreground/80">
             {formatRelativeAge(ticket.createdAt)}
