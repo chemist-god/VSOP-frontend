@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { VsopLogo } from "@/components/templates/triggerly/sections/logo";
 
 export const metadata: Metadata = {
@@ -14,25 +13,29 @@ export default function SubmitLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative min-h-dvh overflow-x-hidden bg-background">
-      <div className="hero-glow opacity-50 sm:opacity-60" />
-      <div className="relative z-10 mx-auto flex min-h-dvh w-full max-w-2xl flex-col px-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] sm:px-6 sm:py-8">
-        <header className="mb-5 flex items-center justify-between gap-3 sm:mb-8 sm:gap-4">
-          <Link
-            href="/"
-            className="inline-flex min-w-0 items-center transition-opacity hover:opacity-80"
+    <div className="relative flex h-dvh flex-col overflow-hidden bg-background">
+      <div className="hero-glow pointer-events-none opacity-50 sm:opacity-60" />
+
+      <div className="relative z-10 mx-auto flex h-full w-full max-w-2xl flex-col px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6 sm:pt-6 sm:pb-5">
+        <header className="flex shrink-0 items-center justify-between gap-3 pb-4 sm:pb-5">
+          <div
+            className="inline-flex min-w-0 items-center"
             aria-label="VSOP support"
           >
             <VsopLogo size="md" className="max-w-[7.5rem] sm:max-w-[10rem]" />
-          </Link>
+          </div>
           <span className="shrink-0 text-[11px] text-muted-foreground sm:text-xs">
             Client intake
           </span>
         </header>
-        <main className="flex-1">{children}</main>
-        <footer className="mt-8 border-t border-border/50 pt-5 text-center text-[11px] leading-relaxed text-muted-foreground sm:mt-10 sm:pt-6 sm:text-xs">
-          Your issue is routed to the VeriTrack support team. Do not share
-          internal dashboard links with clients.
+
+        <main className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch]">
+          <div className="flex min-h-full flex-col">{children}</div>
+        </main>
+
+        <footer className="shrink-0 border-t border-border/40 pt-3 text-center text-[11px] leading-relaxed text-muted-foreground sm:pt-4 sm:text-xs">
+          Your issue is routed to the VeriTrack support team. This page is for
+          support submissions only.
         </footer>
       </div>
     </div>
