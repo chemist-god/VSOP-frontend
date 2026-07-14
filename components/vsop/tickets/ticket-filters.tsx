@@ -5,6 +5,7 @@ import type { TeamMember } from "@/lib/types/team";
 import type { TicketFilters as TicketFilterValues } from "@/lib/types/tickets";
 import {
   TICKET_SEVERITIES,
+  TICKET_SOURCES,
   TICKET_STATUSES,
 } from "@/lib/types/tickets";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,8 @@ type TicketFiltersProps = {
   teamMembers: TeamMember[];
   onChange: (filters: TicketFilterValues) => void;
   showAssigneeFilter?: boolean;
+  showMineFilter?: boolean;
+  currentUserId?: string;
 };
 
 export function TicketFilters({
@@ -30,22 +33,49 @@ export function TicketFilters({
   teamMembers,
   onChange,
   showAssigneeFilter = true,
+  showMineFilter = false,
+  currentUserId,
 }: TicketFiltersProps) {
   const hasActiveFilters = Boolean(
     filters.portalId ||
       filters.status ||
       filters.severity ||
-      filters.assigneeId,
+      filters.assigneeId ||
+      filters.source,
   );
 
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-border/50 bg-card/40 p-3 sm:flex-row sm:flex-wrap sm:items-center">
+      {showMineFilter && currentUserId ? (
+        <Button
+          type="button"
+          size="sm"
+          variant={
+            filters.assigneeId === currentUserId ? "default" : "outline"
+          }
+          onClick={() =>
+            onChange({
+              ...filters,
+              assigneeId:
+                filters.assigneeId === currentUserId
+                  ? undefined
+                  : currentUserId,
+            })
+          }
+        >
+          Assigned to me
+        </Button>
+      ) : null}
+
       <Select
         value={filters.status ?? "all"}
         onValueChange={(value) =>
           onChange({
             ...filters,
-            status: value === "all" ? undefined : (value as TicketFilterValues["status"]),
+            status:
+              value === "all"
+                ? undefined
+                : (value as TicketFilterValues["status"]),
           })
         }
       >
@@ -68,7 +98,9 @@ export function TicketFilters({
           onChange({
             ...filters,
             severity:
-              value === "all" ? undefined : (value as TicketFilterValues["severity"]),
+              value === "all"
+                ? undefined
+                : (value as TicketFilterValues["severity"]),
           })
         }
       >
@@ -80,6 +112,31 @@ export function TicketFilters({
           {TICKET_SEVERITIES.map((severity) => (
             <SelectItem key={severity} value={severity}>
               {severity}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <Select
+        value={filters.source ?? "all"}
+        onValueChange={(value) =>
+          onChange({
+            ...filters,
+            source:
+              value === "all"
+                ? undefined
+                : (value as TicketFilterValues["source"]),
+          })
+        }
+      >
+        <SelectTrigger className="w-full sm:w-[160px]">
+          <SelectValue placeholder="Source" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All sources</SelectItem>
+          {TICKET_SOURCES.map((source) => (
+            <SelectItem key={source} value={source}>
+              {source === "INTERNAL" ? "Internal tasks" : "Portal intake"}
             </SelectItem>
           ))}
         </SelectContent>
