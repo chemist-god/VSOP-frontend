@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "@/components/ui/pebble-toast";
 import { QueryProvider } from "@/providers/query-provider";
 import "./globals.css";
 
@@ -32,7 +32,7 @@ export default function RootLayout({
         <ThemeProvider defaultTheme="dark" enableSystem={false}>
           <QueryProvider>
             {children}
-            <Toaster richColors closeButton />
+            <Toaster position="bottom-right" duration={6000} />
           </QueryProvider>
         </ThemeProvider>
       </body>
