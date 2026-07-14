@@ -6,6 +6,7 @@ import type { TicketListItem } from "@/lib/types/tickets";
 import { formatRelativeAge } from "@/lib/format";
 import { SeverityBadge } from "@/components/vsop/tickets/severity-badge";
 import { TicketStatusBadge } from "@/components/vsop/tickets/ticket-status-badge";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -30,7 +31,7 @@ export function TicketTable({ tickets, portalsById }: TicketTableProps) {
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className="min-w-[120px]">Reference</TableHead>
-              <TableHead className="min-w-[140px]">Portal</TableHead>
+              <TableHead className="min-w-[140px]">Source</TableHead>
               <TableHead>Severity</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="hidden md:table-cell">Age</TableHead>
@@ -41,7 +42,14 @@ export function TicketTable({ tickets, portalsById }: TicketTableProps) {
           </TableHeader>
           <TableBody>
             {tickets.map((ticket) => {
-              const portal = portalsById[ticket.portalId];
+              const portal = ticket.portalId
+                ? portalsById[ticket.portalId]
+                : undefined;
+              const sourceLabel =
+                ticket.source === "INTERNAL"
+                  ? "Internal"
+                  : (portal?.companyName ?? "Portal");
+
               return (
                 <TableRow
                   key={ticket.id}
@@ -54,7 +62,17 @@ export function TicketTable({ tickets, portalsById }: TicketTableProps) {
                     {ticket.referenceId}
                   </TableCell>
                   <TableCell className="text-sm">
-                    {portal?.companyName ?? "Unknown portal"}
+                    <div className="flex items-center gap-2">
+                      <span className="truncate">{sourceLabel}</span>
+                      {ticket.source === "INTERNAL" ? (
+                        <Badge
+                          variant="secondary"
+                          className="shrink-0 text-[10px] font-normal"
+                        >
+                          Task
+                        </Badge>
+                      ) : null}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <SeverityBadge severity={ticket.severity} />
