@@ -297,18 +297,41 @@
   }
 }
 
-[data-sonner-toaster] {
-  --width: min(420px, calc(100vw - 24px));
+/* Pebble toast uses a custom Motion UI; Sonner stays mounted but visually clipped.
+   Keep spinner keyframes available for loading-state pebbles. */
+.sonner-loading-wrapper {
+  --size: 16px;
+  height: var(--size);
+  width: var(--size);
+  position: absolute;
+  inset: 0;
+  z-index: 10;
 }
 
-[data-sonner-toast][data-styled="true"] {
-  padding: 14px 16px;
+.sonner-spinner {
+  position: relative;
+  top: 50%;
+  left: 50%;
+  height: var(--size);
+  width: var(--size);
 }
 
-[data-sonner-toast] [data-title] {
-  line-height: 1.35;
+.sonner-loading-bar {
+  animation: sonner-spin 1.2s linear infinite;
+  background: white;
+  border-radius: 6px;
+  height: 8%;
+  left: -10%;
+  position: absolute;
+  top: -3.9%;
+  width: 24%;
 }
 
-[data-sonner-toast] [data-description] {
-  line-height: 1.45;
+@keyframes sonner-spin {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.15;
+  }
 }
