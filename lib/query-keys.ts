@@ -5,6 +5,10 @@ export const queryKeys = {
       ["tickets", "list", filters] as const,
     detail: (id: string) => ["tickets", "detail", id] as const,
   },
+  inbox: {
+    all: ["inbox"] as const,
+    list: () => ["inbox", "list"] as const,
+  },
   portals: {
     all: ["portals"] as const,
     list: () => ["portals", "list"] as const,
