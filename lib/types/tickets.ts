@@ -21,10 +21,14 @@ export type TicketCategory =
   | "OTHER"
   | "UNSET";
 
+export type TicketSource = "INTAKE" | "INTERNAL";
+
 export interface TicketListItem {
   id: string;
   referenceId: string;
-  portalId: string;
+  portalId: string | null;
+  source: TicketSource;
+  createdById: string | null;
   status: TicketStatus;
   severity: TicketSeverity;
   category: TicketCategory;
@@ -65,6 +69,16 @@ export interface TicketFilters {
   status?: TicketStatus;
   severity?: TicketSeverity;
   assigneeId?: string;
+  source?: TicketSource;
+}
+
+export interface CreateTicketInput {
+  description: string;
+  portalId?: string;
+  severity?: TicketSeverity;
+  category?: TicketCategory;
+  assigneeId?: string;
+  dueDate?: string;
 }
 
 export const TICKET_STATUSES: TicketStatus[] = [
@@ -81,3 +95,5 @@ export const TICKET_SEVERITIES: TicketSeverity[] = [
   "MEDIUM",
   "LOW",
 ];
+
+export const TICKET_SOURCES: TicketSource[] = ["INTAKE", "INTERNAL"];
