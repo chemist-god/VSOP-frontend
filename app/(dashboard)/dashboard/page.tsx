@@ -1,5 +1,5 @@
-import { InboxView } from "@/components/vsop/tickets/inbox-view";
+import { ActivityInboxView } from "@/components/vsop/inbox/activity-inbox-view";
 
 export default function InboxPage() {
-  return <InboxView />;
+  return <ActivityInboxView />;
 }
