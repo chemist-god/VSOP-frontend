@@ -54,6 +54,7 @@ export function AssignTicketPanel({
         queryKey: queryKeys.tickets.detail(ticketId),
       });
       queryClient.invalidateQueries({ queryKey: queryKeys.tickets.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.inbox.all });
     },
     onError: (error) => {
       toastError(
