@@ -18,6 +18,27 @@ export function formatRelativeAge(isoDate: string): string {
   });
 }
 
+/** Compact relative time for dense lists (Linear-style): 40m, 7h, 2d */
+export function formatCompactAge(isoDate: string): string {
+  const created = new Date(isoDate).getTime();
+  const diffMs = Date.now() - created;
+  const minutes = Math.floor(diffMs / 60_000);
+
+  if (minutes < 1) return "now";
+  if (minutes < 60) return `${minutes}m`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h`;
+
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d`;
+
+  return new Date(isoDate).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  });
+}
+
 export function formatDateTime(isoDate: string): string {
   return new Date(isoDate).toLocaleString(undefined, {
     month: "short",
