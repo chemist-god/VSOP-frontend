@@ -1,5 +1,6 @@
 import { apiFetch } from "@/lib/api";
 import type {
+  CreateTicketInput,
   TicketDetail,
   TicketFilters,
   TicketListItem,
@@ -14,6 +15,7 @@ function buildQuery(filters?: TicketFilters): string {
   if (filters.status) params.set("status", filters.status);
   if (filters.severity) params.set("severity", filters.severity);
   if (filters.assigneeId) params.set("assigneeId", filters.assigneeId);
+  if (filters.source) params.set("source", filters.source);
   const query = params.toString();
   return query ? `?${query}` : "";
 }
@@ -24,6 +26,19 @@ export function fetchTickets(filters?: TicketFilters) {
 
 export function fetchTicket(id: string) {
   return apiFetch<TicketDetail>(`/tickets/${id}`);
+}
+
+export function createTicket(input: CreateTicketInput) {
+  return apiFetch<{
+    ticketId: string;
+    referenceId: string;
+    portalId: string | null;
+    source: string;
+    createdAt: string;
+  }>("/tickets", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }
 
 export function updateTicketStatus(id: string, status: TicketStatus) {
