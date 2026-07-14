@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import {
   Building2,
   Columns3,
@@ -20,6 +21,8 @@ import { dashboardNavItems, type DashboardNavIcon } from "@/lib/nav";
 import { useAuthUser } from "@/hooks/use-auth-user";
 import { clearAuthSession } from "@/lib/auth";
 import { toastSuccess } from "@/lib/toast";
+import { fetchInbox } from "@/lib/api/inbox";
+import { queryKeys } from "@/lib/query-keys";
 import { LogoIcon, VsopLogo } from "@/components/templates/triggerly/sections/logo";
 import { UserAvatar } from "@/components/vsop/shared/user-avatar";
 import { ThemeToggle } from "@/components/vsop/shared/theme-toggle";
@@ -63,6 +66,14 @@ export function SidebarNav({
   const router = useRouter();
   const { user } = useAuthUser();
   const role = user?.role ?? "DEVELOPER";
+
+  const inboxQuery = useQuery({
+    queryKey: queryKeys.inbox.list(),
+    queryFn: fetchInbox,
+    refetchInterval: 60_000,
+    retry: false,
+  });
+  const unreadCount = inboxQuery.data?.unreadCount ?? 0;
 
   const visibleItems = dashboardNavItems.filter((item) =>
     (item.roles as readonly string[]).includes(role),
@@ -175,6 +186,8 @@ export function SidebarNav({
               "exact" in item && item.exact
                 ? pathname === item.href
                 : pathname.startsWith(item.href);
+            const showUnread =
+              item.href === "/dashboard" && unreadCount > 0;
 
             const link = (
               <Link
@@ -190,13 +203,27 @@ export function SidebarNav({
                     : "text-muted-foreground hover:bg-muted/40 hover:text-foreground",
                 )}
               >
-                <Icon
-                  className={cn(
-                    "size-4 shrink-0",
-                    active ? "text-sidebar-primary" : "",
-                  )}
-                />
-                {!collapsed ? <span>{item.title}</span> : null}
+                <span className="relative">
+                  <Icon
+                    className={cn(
+                      "size-4 shrink-0",
+                      active ? "text-sidebar-primary" : "",
+                    )}
+                  />
+                  {collapsed && showUnread ? (
+                    <span className="absolute -right-1 -top-1 size-2 rounded-full bg-sidebar-primary" />
+                  ) : null}
+                </span>
+                {!collapsed ? (
+                  <>
+                    <span className="flex-1">{item.title}</span>
+                    {showUnread ? (
+                      <span className="rounded-md bg-sidebar-primary/15 px-1.5 py-0.5 text-[10px] font-medium text-sidebar-primary">
+                        {unreadCount > 99 ? "99+" : unreadCount}
+                      </span>
+                    ) : null}
+                  </>
+                ) : null}
               </Link>
             );
 
