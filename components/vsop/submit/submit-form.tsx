@@ -3,10 +3,11 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
-import { CheckCircle2, Loader2, Send } from "lucide-react";
+import { Loader2, Send } from "lucide-react";
 import { submitIntake, type SubmitIntakeError } from "@/lib/api/intake";
 import { toastError } from "@/lib/toast";
 import { ScreenshotUploader } from "@/components/vsop/submit/screenshot-uploader";
+import { SubmitSuccess } from "@/components/vsop/submit/submit-success";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -80,30 +81,16 @@ export function SubmitForm() {
 
   if (referenceId) {
     return (
-      <Card className="border-emerald-500/20 bg-emerald-500/5 backdrop-blur-sm">
-        <CardHeader className="space-y-3 px-4 py-5 sm:px-6 sm:py-6">
-          <div className="flex size-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400">
-            <CheckCircle2 className="size-6" />
-          </div>
-          <CardTitle className="text-xl leading-tight sm:text-2xl">
-            Thank you — we received your issue
-          </CardTitle>
-          <CardDescription className="text-sm leading-relaxed sm:text-base">
-            Your ticket reference is{" "}
-            <span className="break-all font-mono font-medium text-foreground">
-              {referenceId}
-            </span>
-            . The VeriTrack support team will review it and follow up through
-            your portal admin contact.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="px-4 pb-5 sm:px-6 sm:pb-6">
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            You can close this page now. Please keep the reference ID for your
-            records.
-          </p>
-        </CardContent>
-      </Card>
+      <SubmitSuccess
+        companyName={portalLabel}
+        referenceId={referenceId}
+        onSubmitAnother={() => {
+          setReferenceId(null);
+          setDescription("");
+          setContactName("");
+          setFiles([]);
+        }}
+      />
     );
   }
 
