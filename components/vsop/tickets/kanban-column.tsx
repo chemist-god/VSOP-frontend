@@ -94,7 +94,9 @@ export function KanbanColumn({
             <KanbanCard
               key={ticket.id}
               ticket={ticket}
-              portal={portalsById[ticket.portalId]}
+              portal={
+                ticket.portalId ? portalsById[ticket.portalId] : undefined
+              }
               isDragging={draggingId === ticket.id}
               onDragStart={onDragStart}
               onDragEnd={onDragEnd}
