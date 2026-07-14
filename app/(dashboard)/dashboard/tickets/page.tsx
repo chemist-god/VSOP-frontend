@@ -1,10 +1,5 @@
-import { InboxView } from "@/components/vsop/tickets/inbox-view";
+import { TicketsView } from "@/components/vsop/tickets/tickets-view";
 
 export default function TicketsPage() {
-  return (
-    <InboxView
-      title="Tickets"
-      description="Browse and filter support tickets across all client portals."
-    />
-  );
+  return <TicketsView />;
 }
