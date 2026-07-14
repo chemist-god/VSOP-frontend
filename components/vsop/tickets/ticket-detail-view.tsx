@@ -127,7 +127,7 @@ export function TicketDetailView({ ticketId }: { ticketId: string }) {
         <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <span>Could not load this ticket.</span>
           <Button variant="outline" size="sm" asChild>
-            <Link href="/dashboard">Back to inbox</Link>
+            <Link href="/dashboard/tickets">Back to tickets</Link>
           </Button>
         </AlertDescription>
       </Alert>
@@ -139,9 +139,9 @@ export function TicketDetailView({ ticketId }: { ticketId: string }) {
   return (
     <div className="space-y-6">
       <Button variant="ghost" size="sm" className="px-0" asChild>
-        <Link href="/dashboard">
+        <Link href="/dashboard/tickets">
           <ArrowLeft />
-          Back to inbox
+          Back to tickets
         </Link>
       </Button>
 
@@ -151,7 +151,9 @@ export function TicketDetailView({ ticketId }: { ticketId: string }) {
 
           <Card className="border-border/50 bg-card/40">
             <CardHeader>
-              <CardTitle className="text-base">Client message</CardTitle>
+              <CardTitle className="text-base">
+                {ticket.source === "INTERNAL" ? "Task details" : "Client message"}
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {ticket.contactName ? (
@@ -165,6 +167,7 @@ export function TicketDetailView({ ticketId }: { ticketId: string }) {
             </CardContent>
           </Card>
 
+          {ticket.screenshotUrls.length > 0 ? (
           <Card className="border-border/50 bg-card/40">
             <CardHeader>
               <CardTitle className="text-base">Screenshots</CardTitle>
@@ -173,15 +176,18 @@ export function TicketDetailView({ ticketId }: { ticketId: string }) {
               <ScreenshotGallery urls={ticket.screenshotUrls} />
             </CardContent>
           </Card>
+          ) : null}
 
-          <Card className="border-border/50 bg-card/40">
-            <CardHeader>
-              <CardTitle className="text-base">Context metadata</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ContextMetadata browserInfo={ticket.browserInfo} />
-            </CardContent>
-          </Card>
+          {ticket.browserInfo ? (
+            <Card className="border-border/50 bg-card/40">
+              <CardHeader>
+                <CardTitle className="text-base">Context metadata</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ContextMetadata browserInfo={ticket.browserInfo} />
+              </CardContent>
+            </Card>
+          ) : null}
 
           <Card className="border-border/50 bg-card/40">
             <CardHeader>
