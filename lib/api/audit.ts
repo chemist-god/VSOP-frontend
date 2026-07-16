@@ -47,6 +47,7 @@ export interface InsightsPayload {
     slug: string;
     count: number;
   }>;
+  trendDays?: number;
   trend: Array<{ date: string; created: number; resolved: number }>;
 }
 
@@ -56,6 +57,8 @@ export function fetchAuditLogs(page = 1, pageSize = 20) {
   );
 }
 
-export function fetchInsights() {
-  return apiFetch<InsightsPayload>("/insights");
+export type InsightsTrendDays = 7 | 14 | 30;
+
+export function fetchInsights(days: InsightsTrendDays = 14) {
+  return apiFetch<InsightsPayload>(`/insights?days=${days}`);
 }
