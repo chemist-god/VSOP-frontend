@@ -16,8 +16,15 @@ import {
   YAxis,
 } from "recharts";
 import { AlertCircle, Info, Ticket } from "lucide-react";
-import type { InsightsPayload } from "@/lib/api/audit";
+import type { InsightsPayload, InsightsTrendDays } from "@/lib/api/audit";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -31,10 +38,18 @@ const SEVERITY_COLORS: Record<string, string> = {
 
 const SEVERITY_ORDER = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "UNSET"] as const;
 
+const TREND_RANGES: Array<{ value: InsightsTrendDays; label: string }> = [
+  { value: 7, label: "Last 7 days" },
+  { value: 14, label: "Last 14 days" },
+  { value: 30, label: "Last 30 days" },
+];
+
 type InsightsPanelProps = {
   data?: InsightsPayload;
   isLoading: boolean;
   isError: boolean;
+  trendDays: InsightsTrendDays;
+  onTrendDaysChange: (days: InsightsTrendDays) => void;
   onRetry?: () => void;
 };
 
@@ -167,6 +182,8 @@ export function InsightsPanel({
   data,
   isLoading,
   isError,
+  trendDays,
+  onTrendDaysChange,
   onRetry,
 }: InsightsPanelProps) {
   const [activeSeverity, setActiveSeverity] = useState<string | null>(null);
@@ -301,9 +318,42 @@ export function InsightsPanel({
               Open pipeline and recent resolution activity
             </p>
           </div>
-          <span className="inline-flex h-8 items-center rounded-lg border border-border/60 bg-background/40 px-3 text-xs font-medium text-muted-foreground">
-            Last 14 days
-          </span>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="size-1.5 rounded-full bg-[#818cf8]" />
+                Created
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="size-1.5 rounded-full bg-[#34d399]" />
+                Resolved
+              </span>
+            </div>
+            <Select
+              value={String(trendDays)}
+              onValueChange={(value) =>
+                onTrendDaysChange(Number(value) as InsightsTrendDays)
+              }
+            >
+              <SelectTrigger
+                size="sm"
+                className="h-8 w-auto min-w-[8.5rem] rounded-lg border-border/60 bg-background/40 px-2.5 text-xs font-medium text-muted-foreground shadow-none"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent align="end" className="min-w-[9rem]">
+                {TREND_RANGES.map((range) => (
+                  <SelectItem
+                    key={range.value}
+                    value={String(range.value)}
+                    className="text-xs"
+                  >
+                    {range.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </header>
 
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4 lg:gap-0">
@@ -356,7 +406,7 @@ export function InsightsPanel({
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart
               data={trendData}
-              margin={{ top: 8, right: 4, left: -18, bottom: 0 }}
+              margin={{ top: 8, right: 8, left: -18, bottom: 4 }}
             >
               <CartesianGrid
                 strokeDasharray="4 8"
@@ -372,6 +422,7 @@ export function InsightsPanel({
                 axisLine={false}
                 tickLine={false}
                 minTickGap={28}
+                dy={4}
               />
               <YAxis
                 allowDecimals={false}
@@ -407,17 +458,6 @@ export function InsightsPanel({
               />
             </AreaChart>
           </ResponsiveContainer>
-
-          <div className="pointer-events-none absolute bottom-0 right-0 flex items-center gap-4 pb-1 pr-1 text-[11px] text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5">
-              <span className="size-1.5 rounded-full bg-[#818cf8]" />
-              Created
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="size-1.5 rounded-full bg-[#34d399]" />
-              Resolved
-            </span>
-          </div>
         </div>
       </section>
 
