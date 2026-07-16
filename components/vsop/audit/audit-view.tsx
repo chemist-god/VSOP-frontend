@@ -9,7 +9,7 @@ import {
   History,
   RefreshCw,
 } from "lucide-react";
-import { fetchAuditLogs, fetchInsights } from "@/lib/api/audit";
+import { fetchAuditLogs, fetchInsights, type InsightsTrendDays } from "@/lib/api/audit";
 import { queryKeys } from "@/lib/query-keys";
 import { formatDateTime } from "@/lib/format";
 import { InsightsPanel } from "@/components/vsop/audit/insights-panel";
@@ -30,6 +30,7 @@ function actionLabel(action: string) {
 
 export function AuditView() {
   const [page, setPage] = useState(1);
+  const [trendDays, setTrendDays] = useState<InsightsTrendDays>(14);
 
   const auditQuery = useQuery({
     queryKey: queryKeys.audit.list(page, PAGE_SIZE),
@@ -37,8 +38,8 @@ export function AuditView() {
   });
 
   const insightsQuery = useQuery({
-    queryKey: queryKeys.audit.insights(),
-    queryFn: fetchInsights,
+    queryKey: queryKeys.audit.insights(trendDays),
+    queryFn: () => fetchInsights(trendDays),
   });
 
   const audit = auditQuery.data;
@@ -86,6 +87,8 @@ export function AuditView() {
             data={insightsQuery.data}
             isLoading={insightsQuery.isLoading}
             isError={insightsQuery.isError}
+            trendDays={trendDays}
+            onTrendDaysChange={setTrendDays}
             onRetry={() => insightsQuery.refetch()}
           />
         </TabsContent>
