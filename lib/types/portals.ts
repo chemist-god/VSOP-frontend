@@ -6,6 +6,7 @@ export interface PortalListItem {
   companyName: string;
   clientAdminEmail: string;
   description: string | null;
+  logoUrl: string | null;
   status: PortalStatus;
 }
 
@@ -14,6 +15,14 @@ export interface RegisterPortalInput {
   companyName: string;
   clientAdminEmail: string;
   description?: string;
+  logoUrl?: string;
+}
+
+export interface UpdatePortalInput {
+  companyName: string;
+  clientAdminEmail: string;
+  description?: string | null;
+  logoUrl?: string | null;
 }
 
 export interface RegisterPortalResult {
