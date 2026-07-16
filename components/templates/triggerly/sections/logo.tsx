@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 const LOGO_FOR_LIGHT_UI = "/images/logo/vsop-logo-black.png";
 /** Light wordmark — use on dark surfaces */
 const LOGO_FOR_DARK_UI = "/images/logo/vsop-logo-light.png";
+/** Bold circle mark — favicon / collapsed rail (matches vsop-logo-light) */
+const LOGO_ICON_MARK = "/images/logo/vsop-icon.svg";
 
 /**
  * Responsive logo presets (height-driven; width follows aspect).
@@ -18,7 +20,7 @@ export const vsopLogoSizes = {
   icon: {
     height: 36,
     width: 36,
-    className: "size-9",
+    className: "size-9 sm:size-10",
   },
   sm: {
     height: 28,
@@ -79,23 +81,18 @@ export function VsopLogo({
 
   if (size === "icon") {
     return (
-      <span
+      <Image
+        src={LOGO_ICON_MARK}
+        alt={alt}
+        width={64}
+        height={64}
+        priority={priority}
         className={cn(
-          "relative inline-flex shrink-0 overflow-hidden rounded-full bg-transparent",
+          "pointer-events-none shrink-0 select-none object-contain",
           preset.className,
           className,
         )}
-        aria-label={alt}
-      >
-        <Image
-          src={src}
-          alt={alt}
-          width={1080}
-          height={582}
-          priority={priority}
-          className="pointer-events-none absolute inset-0 size-[175%] max-w-none select-none object-cover object-[22%_48%]"
-        />
-      </span>
+      />
     );
   }
 
