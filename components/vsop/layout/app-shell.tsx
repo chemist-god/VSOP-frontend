@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { SidebarNav } from "@/components/vsop/layout/sidebar-nav";
 import { TopBar } from "@/components/vsop/layout/top-bar";
+import { CommandPalette } from "@/components/vsop/search/command-palette";
+import { CommandPaletteProvider } from "@/hooks/use-command-palette";
 import { cn } from "@/lib/utils";
 import {
   Sheet,
@@ -47,49 +49,56 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="flex h-svh overflow-hidden bg-background">
-        {/* Icon / expanded rail — no competing top-bar border junction */}
-        <aside
-          className={cn(
-            "hidden h-svh shrink-0 transition-[width] duration-200 ease-out lg:flex",
-            ready && collapsed ? "w-[72px]" : "w-[240px]",
-          )}
-        >
-          <SidebarNav
-            collapsed={collapsed}
-            onToggleCollapsed={toggleCollapsed}
-          />
-        </aside>
-
-        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-          <SheetContent side="left" className="h-svh w-[280px] border-border/50 p-0">
-            <SheetHeader className="sr-only">
-              <SheetTitle>Navigation</SheetTitle>
-            </SheetHeader>
+      <CommandPaletteProvider>
+        <div className="flex h-svh overflow-hidden bg-background">
+          {/* Icon / expanded rail — no competing top-bar border junction */}
+          <aside
+            className={cn(
+              "hidden h-svh shrink-0 transition-[width] duration-200 ease-out lg:flex",
+              ready && collapsed ? "w-[72px]" : "w-[240px]",
+            )}
+          >
             <SidebarNav
-              className="h-full w-full"
-              onNavigate={() => setMobileOpen(false)}
+              collapsed={collapsed}
+              onToggleCollapsed={toggleCollapsed}
             />
-          </SheetContent>
-        </Sheet>
+          </aside>
 
-        {/* Floating rounded workspace — ReUI-style curved edges */}
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-2 sm:p-3">
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border/50 bg-card/40 shadow-sm shadow-black/20">
-            <TopBar onOpenMobileNav={() => setMobileOpen(true)} />
-            <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-              <div
-                className={cn(
-                  "mx-auto w-full px-4 py-6 sm:px-6 lg:px-8 lg:py-7",
-                  isWide ? "max-w-none" : "max-w-7xl",
-                )}
-              >
-                {children}
-              </div>
-            </main>
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetContent
+              side="left"
+              className="h-svh w-[280px] border-border/50 p-0"
+            >
+              <SheetHeader className="sr-only">
+                <SheetTitle>Navigation</SheetTitle>
+              </SheetHeader>
+              <SidebarNav
+                className="h-full w-full"
+                onNavigate={() => setMobileOpen(false)}
+              />
+            </SheetContent>
+          </Sheet>
+
+          {/* Floating rounded workspace — ReUI-style curved edges */}
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-2 sm:p-3">
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border/50 bg-card/40 shadow-sm shadow-black/20">
+              <TopBar onOpenMobileNav={() => setMobileOpen(true)} />
+              <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+                <div
+                  className={cn(
+                    "mx-auto w-full px-4 py-6 sm:px-6 lg:px-8 lg:py-7",
+                    isWide ? "max-w-none" : "max-w-7xl",
+                  )}
+                >
+                  {children}
+                </div>
+              </main>
+            </div>
           </div>
+
+          <CommandPalette />
         </div>
-      </div>
+      </CommandPaletteProvider>
     </TooltipProvider>
   );
 }
