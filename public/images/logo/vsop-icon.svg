@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="VSOP">
+  <circle cx="32" cy="32" r="30" fill="#2563EB"/>
+  <path
+    d="M19 18 L32 46 L45 18 H39.5 L32 33.5 L24.5 18 H19 Z"
+    fill="#0A0A0A"
+  />
+</svg>
