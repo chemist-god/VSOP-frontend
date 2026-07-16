@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Building2,
@@ -9,6 +10,7 @@ import {
   KeyRound,
   Loader2,
   MoreHorizontal,
+  Pencil,
   Plus,
   Power,
   PowerOff,
@@ -17,16 +19,22 @@ import {
   fetchPortals,
   registerPortal,
   rotatePortalKey,
+  updatePortal,
   updatePortalStatus,
 } from "@/lib/api/portals";
 import { queryKeys } from "@/lib/query-keys";
 import { toastError, toastSuccess } from "@/lib/toast";
 import { ApiError } from "@/lib/api";
-import type { PortalListItem } from "@/lib/types/portals";
+import type {
+  PortalListItem,
+  RegisterPortalInput,
+  UpdatePortalInput,
+} from "@/lib/types/portals";
 import { AdminOnlyNotice } from "@/components/vsop/shared/admin-only-notice";
 import { EmptyState } from "@/components/vsop/shared/empty-state";
 import { TablePagination } from "@/components/vsop/shared/table-pagination";
 import { DeactivatePortalConfirmModal } from "@/components/vsop/portals/deactivate-portal-confirm-modal";
+import { PortalLogo } from "@/components/vsop/portals/portal-logo";
 import {
   PortalApiKeyReveal,
   type PortalApiKeyRevealData,
@@ -58,10 +66,38 @@ import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 10;
 
+type PortalFormState = {
+  slug: string;
+  companyName: string;
+  clientAdminEmail: string;
+  description: string;
+  logoUrl: string;
+};
+
+const emptyForm: PortalFormState = {
+  slug: "",
+  companyName: "",
+  clientAdminEmail: "",
+  description: "",
+  logoUrl: "",
+};
+
 export function PortalsView() {
   const { isAdmin } = useAuthUser();
   const queryClient = useQueryClient();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [registerOpen, setRegisterOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    if (searchParams.get("register") !== "1") return;
+    setRegisterOpen(true);
+    router.replace("/dashboard/portals", { scroll: false });
+  }, [isAdmin, searchParams, router]);
+  const [editingPortal, setEditingPortal] = useState<PortalListItem | null>(
+    null,
+  );
   const [page, setPage] = useState(1);
   const [apiKeyReveal, setApiKeyReveal] =
     useState<PortalApiKeyRevealData | null>(null);
@@ -70,12 +106,8 @@ export function PortalsView() {
     companyName: string;
     slug: string;
   } | null>(null);
-  const [form, setForm] = useState({
-    slug: "",
-    companyName: "",
-    clientAdminEmail: "",
-    description: "",
-  });
+  const [form, setForm] = useState<PortalFormState>(emptyForm);
+  const [editForm, setEditForm] = useState<PortalFormState>(emptyForm);
 
   const portalsQuery = useQuery({
     queryKey: queryKeys.portals.list(),
@@ -104,17 +136,30 @@ export function PortalsView() {
         source: "registered",
       });
       setRegisterOpen(false);
-      setForm({
-        slug: "",
-        companyName: "",
-        clientAdminEmail: "",
-        description: "",
-      });
+      setForm(emptyForm);
       queryClient.invalidateQueries({ queryKey: queryKeys.portals.all });
     },
     onError: (error) => {
       toastError(
         "Registration failed",
+        error instanceof ApiError ? { description: error.message } : undefined,
+      );
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, input }: { id: string; input: UpdatePortalInput }) =>
+      updatePortal(id, input),
+    onSuccess: (result) => {
+      toastSuccess("Portal updated", {
+        description: `${result.companyName} saved.`,
+      });
+      setEditingPortal(null);
+      queryClient.invalidateQueries({ queryKey: queryKeys.portals.all });
+    },
+    onError: (error) => {
+      toastError(
+        "Update failed",
         error instanceof ApiError ? { description: error.message } : undefined,
       );
     },
@@ -185,6 +230,39 @@ export function PortalsView() {
     toastSuccess("Intake link copied");
   }
 
+  function openEdit(portal: PortalListItem) {
+    setEditForm({
+      slug: portal.slug,
+      companyName: portal.companyName,
+      clientAdminEmail: portal.clientAdminEmail,
+      description: portal.description ?? "",
+      logoUrl: portal.logoUrl ?? "",
+    });
+    setEditingPortal(portal);
+  }
+
+  function submitRegister() {
+    const input: RegisterPortalInput = {
+      slug: form.slug.trim(),
+      companyName: form.companyName.trim(),
+      clientAdminEmail: form.clientAdminEmail.trim(),
+    };
+    if (form.description.trim()) input.description = form.description.trim();
+    if (form.logoUrl.trim()) input.logoUrl = form.logoUrl.trim();
+    registerMutation.mutate(input);
+  }
+
+  function submitEdit() {
+    if (!editingPortal) return;
+    const input: UpdatePortalInput = {
+      companyName: editForm.companyName.trim(),
+      clientAdminEmail: editForm.clientAdminEmail.trim(),
+      description: editForm.description.trim() || null,
+      logoUrl: editForm.logoUrl.trim() || null,
+    };
+    updateMutation.mutate({ id: editingPortal.id, input });
+  }
+
   if (!isAdmin) {
     return (
       <AdminOnlyNotice
@@ -196,7 +274,6 @@ export function PortalsView() {
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 sm:gap-6">
-      {/* Compact header */}
       <header className="flex items-start justify-between gap-3">
         <div className="min-w-0 space-y-0.5">
           <div className="flex items-center gap-2">
@@ -210,14 +287,20 @@ export function PortalsView() {
             ) : null}
           </div>
           <p className="hidden text-sm text-muted-foreground sm:block">
-            Client portals, intake links, and API keys.
+            Client portals, logos, intake links, and API keys.
           </p>
           <p className="text-xs text-muted-foreground sm:hidden">
-            Intake links & API keys
+            Logos, links & API keys
           </p>
         </div>
 
-        <Dialog open={registerOpen} onOpenChange={setRegisterOpen}>
+        <Dialog
+          open={registerOpen}
+          onOpenChange={(open) => {
+            setRegisterOpen(open);
+            if (!open) setForm(emptyForm);
+          }}
+        >
           <DialogTrigger asChild>
             <Button size="sm" className="h-8 shrink-0 gap-1.5 px-2.5">
               <Plus className="size-3.5" />
@@ -229,71 +312,26 @@ export function PortalsView() {
             <DialogHeader>
               <DialogTitle>Register portal</DialogTitle>
               <DialogDescription>
-                Create a client portal entry and generate its intake API key.
+                Create a client portal entry, attach a logo URL, and generate
+                its intake API key.
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <Label htmlFor="slug">Slug</Label>
-                <Input
-                  id="slug"
-                  placeholder="acme-corp"
-                  value={form.slug}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      slug: event.target.value,
-                    }))
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="companyName">Company name</Label>
-                <Input
-                  id="companyName"
-                  value={form.companyName}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      companyName: event.target.value,
-                    }))
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="clientAdminEmail">Client admin email</Label>
-                <Input
-                  id="clientAdminEmail"
-                  type="email"
-                  value={form.clientAdminEmail}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      clientAdminEmail: event.target.value,
-                    }))
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={form.description}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      description: event.target.value,
-                    }))
-                  }
-                  className="min-h-[80px] resize-none"
-                />
-              </div>
-            </div>
+            <PortalFormFields
+              form={form}
+              onChange={setForm}
+              showSlug
+              logoPreview
+            />
             <DialogFooter className="gap-2 sm:gap-0">
               <Button
                 className="w-full sm:w-auto"
-                onClick={() => registerMutation.mutate(form)}
-                disabled={registerMutation.isPending}
+                onClick={submitRegister}
+                disabled={
+                  registerMutation.isPending ||
+                  !form.slug.trim() ||
+                  !form.companyName.trim() ||
+                  !form.clientAdminEmail.trim()
+                }
               >
                 {registerMutation.isPending ? (
                   <>
@@ -343,6 +381,7 @@ export function PortalsView() {
                   isStatusPending={statusMutation.isPending}
                   isRotatePending={rotateMutation.isPending}
                   onCopyLink={() => copyIntakeLink(portal.slug)}
+                  onEdit={() => openEdit(portal)}
                   onActivate={() =>
                     statusMutation.mutate({
                       id: portal.id,
@@ -379,6 +418,58 @@ export function PortalsView() {
         </div>
       ) : null}
 
+      <Dialog
+        open={Boolean(editingPortal)}
+        onOpenChange={(open) => {
+          if (!open && !updateMutation.isPending) setEditingPortal(null);
+        }}
+      >
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit portal</DialogTitle>
+            <DialogDescription>
+              Update company details and logo. Slug stays locked so intake
+              links keep working.
+            </DialogDescription>
+          </DialogHeader>
+          <PortalFormFields
+            form={editForm}
+            onChange={setEditForm}
+            showSlug
+            slugLocked
+            logoPreview
+          />
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={() => setEditingPortal(null)}
+              disabled={updateMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="w-full sm:w-auto"
+              onClick={submitEdit}
+              disabled={
+                updateMutation.isPending ||
+                !editForm.companyName.trim() ||
+                !editForm.clientAdminEmail.trim()
+              }
+            >
+              {updateMutation.isPending ? (
+                <>
+                  <Loader2 className="animate-spin" />
+                  Saving…
+                </>
+              ) : (
+                "Save changes"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <DeactivatePortalConfirmModal
         open={Boolean(portalToDeactivate)}
         companyName={portalToDeactivate?.companyName ?? null}
@@ -399,11 +490,113 @@ export function PortalsView() {
   );
 }
 
+function PortalFormFields({
+  form,
+  onChange,
+  showSlug,
+  slugLocked = false,
+  logoPreview = false,
+}: {
+  form: PortalFormState;
+  onChange: (next: PortalFormState) => void;
+  showSlug?: boolean;
+  slugLocked?: boolean;
+  logoPreview?: boolean;
+}) {
+  return (
+    <div className="space-y-3">
+      {showSlug ? (
+        <div className="space-y-2">
+          <Label htmlFor="portal-slug">Slug</Label>
+          <Input
+            id="portal-slug"
+            placeholder="acme-corp"
+            value={form.slug}
+            disabled={slugLocked}
+            onChange={(event) =>
+              onChange({ ...form, slug: event.target.value })
+            }
+          />
+          {slugLocked ? (
+            <p className="text-[11px] text-muted-foreground">
+              Locked — used in intake URLs.
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className="space-y-2">
+        <Label htmlFor="portal-company">Company name</Label>
+        <Input
+          id="portal-company"
+          value={form.companyName}
+          onChange={(event) =>
+            onChange({ ...form, companyName: event.target.value })
+          }
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="portal-email">Client admin email</Label>
+        <Input
+          id="portal-email"
+          type="email"
+          value={form.clientAdminEmail}
+          onChange={(event) =>
+            onChange({ ...form, clientAdminEmail: event.target.value })
+          }
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="portal-logo">Logo URL</Label>
+        <Input
+          id="portal-logo"
+          type="url"
+          placeholder="https://res.cloudinary.com/.../logo.webp"
+          value={form.logoUrl}
+          onChange={(event) =>
+            onChange({ ...form, logoUrl: event.target.value })
+          }
+        />
+        <p className="text-[11px] text-muted-foreground">
+          Paste a Cloudinary (or HTTPS) image URL. Optional.
+        </p>
+        {logoPreview && form.logoUrl.trim() ? (
+          <div className="flex items-center gap-2.5 rounded-xl border border-border/50 bg-muted/20 px-3 py-2">
+            <PortalLogo
+              companyName={form.companyName || "Preview"}
+              logoUrl={form.logoUrl.trim()}
+              size="md"
+            />
+            <span className="truncate text-xs text-muted-foreground">
+              Preview
+            </span>
+          </div>
+        ) : null}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="portal-description">Description</Label>
+        <Textarea
+          id="portal-description"
+          value={form.description}
+          onChange={(event) =>
+            onChange({ ...form, description: event.target.value })
+          }
+          className="min-h-[80px] resize-none"
+        />
+      </div>
+    </div>
+  );
+}
+
 function PortalRow({
   portal,
   isStatusPending,
   isRotatePending,
   onCopyLink,
+  onEdit,
   onActivate,
   onDeactivate,
   onRotate,
@@ -412,6 +605,7 @@ function PortalRow({
   isStatusPending: boolean;
   isRotatePending: boolean;
   onCopyLink: () => void;
+  onEdit: () => void;
   onActivate: () => void;
   onDeactivate: () => void;
   onRotate: () => void;
@@ -421,16 +615,11 @@ function PortalRow({
   return (
     <li className="px-3 py-3 sm:px-4 sm:py-3.5">
       <div className="flex items-start gap-3">
-        <div
-          className={cn(
-            "mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg border",
-            active
-              ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
-              : "border-border/50 bg-muted/40 text-muted-foreground",
-          )}
-        >
-          <Building2 className="size-3.5" />
-        </div>
+        <PortalLogo
+          companyName={portal.companyName}
+          logoUrl={portal.logoUrl}
+          active={active}
+        />
 
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
@@ -456,7 +645,6 @@ function PortalRow({
               </p>
             </div>
 
-            {/* Desktop quick actions */}
             <div className="hidden shrink-0 items-center gap-1 sm:flex">
               <Button
                 variant="ghost"
@@ -467,12 +655,7 @@ function PortalRow({
               >
                 <Copy className="size-3.5" />
               </Button>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                className="size-8"
-                asChild
-              >
+              <Button variant="ghost" size="icon-sm" className="size-8" asChild>
                 <a
                   href={`/submit?portal=${portal.slug}`}
                   target="_blank"
@@ -487,19 +670,20 @@ function PortalRow({
                 isStatusPending={isStatusPending}
                 isRotatePending={isRotatePending}
                 onCopyLink={onCopyLink}
+                onEdit={onEdit}
                 onActivate={onActivate}
                 onDeactivate={onDeactivate}
                 onRotate={onRotate}
               />
             </div>
 
-            {/* Mobile overflow menu */}
             <div className="sm:hidden">
               <PortalActionsMenu
                 portal={portal}
                 isStatusPending={isStatusPending}
                 isRotatePending={isRotatePending}
                 onCopyLink={onCopyLink}
+                onEdit={onEdit}
                 onActivate={onActivate}
                 onDeactivate={onDeactivate}
                 onRotate={onRotate}
@@ -508,41 +692,13 @@ function PortalRow({
             </div>
           </div>
 
-          <div className="mt-2 flex flex-col gap-1.5 sm:mt-1.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-3 sm:gap-y-1">
+          <div className="mt-1.5 flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-3 sm:gap-y-1">
             <p className="truncate text-[11px] text-muted-foreground sm:text-xs">
               {portal.clientAdminEmail}
             </p>
             <code className="hidden truncate rounded-md bg-muted/40 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground md:inline-block">
               /submit?portal={portal.slug}
             </code>
-          </div>
-
-          {/* Mobile quick row: copy + open */}
-          <div className="mt-2.5 flex items-center gap-2 sm:hidden">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 flex-1 gap-1.5 text-[11px]"
-              onClick={onCopyLink}
-            >
-              <Copy className="size-3" />
-              Copy link
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 flex-1 gap-1.5 text-[11px]"
-              asChild
-            >
-              <a
-                href={`/submit?portal=${portal.slug}`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <ExternalLink className="size-3" />
-                Open
-              </a>
-            </Button>
           </div>
         </div>
       </div>
@@ -555,6 +711,7 @@ function PortalActionsMenu({
   isStatusPending,
   isRotatePending,
   onCopyLink,
+  onEdit,
   onActivate,
   onDeactivate,
   onRotate,
@@ -564,6 +721,7 @@ function PortalActionsMenu({
   isStatusPending: boolean;
   isRotatePending: boolean;
   onCopyLink: () => void;
+  onEdit: () => void;
   onActivate: () => void;
   onDeactivate: () => void;
   onRotate: () => void;
@@ -603,10 +761,11 @@ function PortalActionsMenu({
             <DropdownMenuSeparator />
           </>
         ) : null}
-        <DropdownMenuItem
-          disabled={isRotatePending}
-          onClick={onRotate}
-        >
+        <DropdownMenuItem onClick={onEdit}>
+          <Pencil className="size-3.5" />
+          Edit portal
+        </DropdownMenuItem>
+        <DropdownMenuItem disabled={isRotatePending} onClick={onRotate}>
           <KeyRound className="size-3.5" />
           Rotate API key
         </DropdownMenuItem>
