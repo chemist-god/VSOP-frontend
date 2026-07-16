@@ -26,6 +26,6 @@ export const queryKeys = {
     all: ["audit"] as const,
     list: (page: number, pageSize: number) =>
       ["audit", "list", page, pageSize] as const,
-    insights: () => ["audit", "insights"] as const,
+    insights: (days = 14) => ["audit", "insights", days] as const,
   },
 };
