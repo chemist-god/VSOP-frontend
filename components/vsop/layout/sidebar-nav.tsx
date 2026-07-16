@@ -19,6 +19,7 @@ import {
 import { cn } from "@/lib/utils";
 import { dashboardNavItems, type DashboardNavIcon } from "@/lib/nav";
 import { useAuthUser } from "@/hooks/use-auth-user";
+import { useCommandPalette } from "@/hooks/use-command-palette";
 import { clearAuthSession } from "@/lib/auth";
 import { toastSuccess } from "@/lib/toast";
 import { fetchInbox } from "@/lib/api/inbox";
@@ -65,6 +66,7 @@ export function SidebarNav({
   const pathname = usePathname();
   const router = useRouter();
   const { user } = useAuthUser();
+  const { setOpen: setPaletteOpen } = useCommandPalette();
   const role = user?.role ?? "DEVELOPER";
 
   const inboxQuery = useQuery({
@@ -154,22 +156,27 @@ export function SidebarNav({
             <TooltipTrigger asChild>
               <button
                 type="button"
+                onClick={() => setPaletteOpen(true)}
                 className="flex size-10 w-full items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
                 aria-label="Search"
               >
                 <Search className="size-4" />
               </button>
             </TooltipTrigger>
-            <TooltipContent side="right">Search</TooltipContent>
+            <TooltipContent side="right">Search ⌘K</TooltipContent>
           </Tooltip>
         ) : (
-          <div className="flex items-center gap-2 rounded-xl border border-border/40 bg-muted/20 px-2.5 py-2 text-xs text-muted-foreground">
+          <button
+            type="button"
+            onClick={() => setPaletteOpen(true)}
+            className="flex w-full items-center gap-2 rounded-xl border border-border/40 bg-muted/20 px-2.5 py-2 text-left text-xs text-muted-foreground transition-colors hover:bg-muted/35 hover:text-foreground"
+          >
             <Search className="size-3.5 shrink-0" />
             <span className="truncate">Search…</span>
             <kbd className="ml-auto rounded-md bg-muted/50 px-1.5 py-0.5 text-[10px]">
               ⌘K
             </kbd>
-          </div>
+          </button>
         )}
       </div>
 
