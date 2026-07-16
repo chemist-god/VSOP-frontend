@@ -48,7 +48,8 @@ function ThemeHotkey() {
         return
       }
 
-      if (event.key.toLowerCase() !== "d") {
+      // Some browsers/IME/extensions fire keydown with a missing key
+      if ((event.key ?? "").toLowerCase() !== "d") {
         return
       }
 
