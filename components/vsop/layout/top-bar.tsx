@@ -2,11 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronRight, Home, PanelLeft } from "lucide-react";
+import { ChevronRight, Home, PanelLeft, Search } from "lucide-react";
 import { getStoredUser } from "@/lib/auth";
 import { dashboardNavItems } from "@/lib/nav";
+import { useCommandPalette } from "@/hooks/use-command-palette";
 import { UserAvatar } from "@/components/vsop/shared/user-avatar";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 function currentPageTitle(pathname: string): string {
   const match = [...dashboardNavItems]
@@ -30,6 +36,7 @@ export function TopBar({ onOpenMobileNav }: { onOpenMobileNav?: () => void }) {
   const pathname = usePathname();
   const user = getStoredUser();
   const title = currentPageTitle(pathname);
+  const { setOpen: setPaletteOpen } = useCommandPalette();
 
   return (
     <header className="z-20 flex h-14 shrink-0 items-center justify-between gap-3 border-b border-border/40 px-3 sm:px-5">
@@ -63,20 +70,38 @@ export function TopBar({ onOpenMobileNav }: { onOpenMobileNav?: () => void }) {
         </nav>
       </div>
 
-      <Link
-        href="/dashboard/profile"
-        className="flex items-center gap-2 rounded-xl px-1.5 py-1 transition-colors hover:bg-muted/40 sm:gap-2.5 sm:px-2"
-      >
-        <UserAvatar
-          name={user?.name}
-          email={user?.email}
-          role={user?.role}
-          size={28}
-        />
-        <span className="hidden max-w-[140px] truncate text-xs font-medium sm:inline">
-          {user?.name ?? "Profile"}
-        </span>
-      </Link>
+      <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              className="text-muted-foreground"
+              aria-label="Search"
+              onClick={() => setPaletteOpen(true)}
+            >
+              <Search className="size-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Search ⌘K</TooltipContent>
+        </Tooltip>
+
+        <Link
+          href="/dashboard/profile"
+          className="flex items-center gap-2 rounded-xl px-1.5 py-1 transition-colors hover:bg-muted/40 sm:gap-2.5 sm:px-2"
+        >
+          <UserAvatar
+            name={user?.name}
+            email={user?.email}
+            role={user?.role}
+            size={28}
+          />
+          <span className="hidden max-w-[140px] truncate text-xs font-medium sm:inline">
+            {user?.name ?? "Profile"}
+          </span>
+        </Link>
+      </div>
     </header>
   );
 }
