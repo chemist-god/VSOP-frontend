@@ -12,9 +12,18 @@ const fontSans = Geist({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://support.veritrack.cloud"),
-  title: "VeriTrack VSOP — Internal Support Operations",
+  applicationName: "VSOP",
+  title: {
+    default: "VeriTrack VSOP — Internal Support Operations",
+    template: "%s · VSOP",
+  },
   description:
     "Centralize client portal support tickets, assign your team, and track every resolution — no more lost WhatsApp threads.",
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/apple-icon.svg", type: "image/svg+xml", sizes: "180x180" }],
+    shortcut: ["/icon.svg"],
+  },
 };
 
 export default function RootLayout({
