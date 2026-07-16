@@ -356,26 +356,27 @@ export function InsightsPanel({
           </div>
         </header>
 
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4 lg:gap-0">
+        <div className="grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-4 lg:gap-0">
           {kpis.map((kpi, index) => (
             <div
               key={kpi.label}
               className={cn(
-                "min-w-0 lg:px-5",
+                "min-w-0 rounded-xl border border-border/40 bg-background/20 px-3 py-3 sm:px-4",
+                "lg:rounded-none lg:border-0 lg:bg-transparent lg:px-5 lg:py-0",
                 index === 0 && "lg:pl-0",
                 index === kpis.length - 1 && "lg:pr-0",
                 index > 0 && "lg:border-l lg:border-border/40",
               )}
             >
-              <p className="text-xs font-medium text-muted-foreground">
+              <p className="text-[11px] font-medium leading-snug text-muted-foreground sm:text-xs">
                 {kpi.label}
               </p>
-              <p className="mt-1.5 text-3xl font-semibold tracking-tight tabular-nums text-foreground">
+              <p className="mt-1.5 text-2xl font-semibold tracking-tight tabular-nums text-foreground sm:text-3xl">
                 {kpi.value.toLocaleString()}
               </p>
               <p
                 className={cn(
-                  "mt-1.5 text-xs font-medium tabular-nums",
+                  "mt-1 text-[11px] font-medium tabular-nums sm:mt-1.5 sm:text-xs",
                   kpi.tone === "good" && "text-emerald-400",
                   kpi.tone === "info" && "text-sky-400",
                   kpi.tone === "warn" && "text-amber-400",
