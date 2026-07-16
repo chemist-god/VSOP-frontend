@@ -140,7 +140,7 @@ export function TicketsView() {
         }
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {[
           { label: "Open", value: stats.open, tone: "text-amber-600 dark:text-amber-400" },
           {
@@ -163,8 +163,8 @@ export function TicketsView() {
             key={stat.label}
             className="border-border/50 bg-card/50 shadow-sm shadow-black/5"
           >
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-normal text-muted-foreground">
+            <CardHeader className="pb-1.5 sm:pb-2">
+              <CardTitle className="text-[11px] font-normal leading-snug text-muted-foreground sm:text-xs">
                 {stat.label}
               </CardTitle>
             </CardHeader>
@@ -173,7 +173,7 @@ export function TicketsView() {
                 <Skeleton className="h-8 w-12" />
               ) : (
                 <p
-                  className={`text-2xl font-medium tracking-tight ${stat.tone}`}
+                  className={`text-2xl font-medium tracking-tight tabular-nums ${stat.tone}`}
                 >
                   {stat.value}
                 </p>
