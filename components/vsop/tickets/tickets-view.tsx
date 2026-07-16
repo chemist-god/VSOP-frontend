@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, Columns3, RefreshCw, Ticket } from "lucide-react";
 import { fetchPortals } from "@/lib/api/portals";
@@ -26,9 +26,18 @@ const PAGE_SIZE = 10;
 
 export function TicketsView() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isAdmin, user } = useAuthUser();
   const [filters, setFilters] = useState<TicketFilterValues>({});
   const [page, setPage] = useState(1);
+  const [createOpen, setCreateOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    if (searchParams.get("new") !== "1") return;
+    setCreateOpen(true);
+    router.replace("/dashboard/tickets", { scroll: false });
+  }, [isAdmin, searchParams, router]);
 
   const filterQuery = useMemo(
     () => ({
@@ -120,6 +129,8 @@ export function TicketsView() {
             </Button>
             {isAdmin ? (
               <CreateTicketDialog
+                open={createOpen}
+                onOpenChange={setCreateOpen}
                 onCreated={(ticketId) =>
                   router.push(`/dashboard/tickets/${ticketId}`)
                 }
