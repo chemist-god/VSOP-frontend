@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Mail, Plus, Trash2, Users } from "lucide-react";
 import {
@@ -53,6 +54,8 @@ import { cn } from "@/lib/utils";
 export function TeamView() {
   const { user, isAdmin } = useAuthUser();
   const queryClient = useQueryClient();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [memberToRemove, setMemberToRemove] = useState<{
@@ -64,6 +67,16 @@ export function TeamView() {
     email: "",
     role: "DEVELOPER" as "ADMIN" | "DEVELOPER",
   });
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    const invite = searchParams.get("invite") === "1";
+    const member = searchParams.get("member")?.trim();
+    if (!invite && !member) return;
+    if (invite) setOpen(true);
+    if (member) setSelectedMemberId(member);
+    router.replace("/dashboard/team", { scroll: false });
+  }, [isAdmin, searchParams, router]);
 
   const teamQuery = useQuery({
     queryKey: queryKeys.team.roster(),
