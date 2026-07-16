@@ -38,11 +38,22 @@ import { Textarea } from "@/components/ui/textarea";
 
 type CreateTicketDialogProps = {
   onCreated?: (ticketId: string) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** Hide the built-in trigger when controlled externally (e.g. command palette). */
+  hideTrigger?: boolean;
 };
 
-export function CreateTicketDialog({ onCreated }: CreateTicketDialogProps) {
+export function CreateTicketDialog({
+  onCreated,
+  open: openProp,
+  onOpenChange,
+  hideTrigger = false,
+}: CreateTicketDialogProps) {
   const queryClient = useQueryClient();
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const open = openProp ?? uncontrolledOpen;
+  const setOpen = onOpenChange ?? setUncontrolledOpen;
   const [description, setDescription] = useState("");
   const [portalId, setPortalId] = useState<string>("none");
   const [severity, setSeverity] = useState<TicketSeverity>("MEDIUM");
@@ -108,12 +119,14 @@ export function CreateTicketDialog({ onCreated }: CreateTicketDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm" className="gap-1.5">
-          <Plus className="size-4" />
-          New ticket
-        </Button>
-      </DialogTrigger>
+      {hideTrigger ? null : (
+        <DialogTrigger asChild>
+          <Button size="sm" className="gap-1.5">
+            <Plus className="size-4" />
+            New ticket
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-lg">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
