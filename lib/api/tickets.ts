@@ -29,6 +29,17 @@ export function fetchTicket(id: string) {
 }
 
 export function createTicket(input: CreateTicketInput) {
+  const form = new FormData();
+  form.append("description", input.description);
+  if (input.severity) form.append("severity", input.severity);
+  if (input.category) form.append("category", input.category);
+  if (input.portalId) form.append("portalId", input.portalId);
+  if (input.assigneeId) form.append("assigneeId", input.assigneeId);
+  if (input.dueDate) form.append("dueDate", input.dueDate);
+  for (const file of input.screenshots ?? []) {
+    form.append("screenshots", file);
+  }
+
   return apiFetch<{
     ticketId: string;
     referenceId: string;
@@ -37,7 +48,7 @@ export function createTicket(input: CreateTicketInput) {
     createdAt: string;
   }>("/tickets", {
     method: "POST",
-    body: JSON.stringify(input),
+    body: form,
   });
 }
 
