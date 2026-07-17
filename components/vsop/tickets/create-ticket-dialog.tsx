@@ -16,6 +16,7 @@ import { defaultDueDateIso } from "@/lib/format";
 import { toastError, toastSuccess } from "@/lib/toast";
 import { ApiError } from "@/lib/api";
 import { DateTimePicker } from "@/components/vsop/shared/date-time-picker";
+import { ScreenshotUploader } from "@/components/vsop/submit/screenshot-uploader";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -55,6 +56,7 @@ export function CreateTicketDialog({
   const open = openProp ?? uncontrolledOpen;
   const setOpen = onOpenChange ?? setUncontrolledOpen;
   const [description, setDescription] = useState("");
+  const [screenshots, setScreenshots] = useState<File[]>([]);
   const [portalId, setPortalId] = useState<string>("none");
   const [severity, setSeverity] = useState<TicketSeverity>("MEDIUM");
   const [assigneeId, setAssigneeId] = useState<string>("none");
@@ -94,10 +96,16 @@ export function CreateTicketDialog({
 
   function resetForm() {
     setDescription("");
+    setScreenshots([]);
     setPortalId("none");
     setSeverity("MEDIUM");
     setAssigneeId("none");
     setDueDate(defaultDueDateIso());
+  }
+
+  function handleOpenChange(next: boolean) {
+    setOpen(next);
+    if (!next) resetForm();
   }
 
   function handleSubmit(event: React.FormEvent) {
@@ -114,11 +122,12 @@ export function CreateTicketDialog({
       input.assigneeId = assigneeId;
       input.dueDate = new Date(dueDate).toISOString();
     }
+    if (screenshots.length) input.screenshots = screenshots;
     mutation.mutate(input);
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       {hideTrigger ? null : (
         <DialogTrigger asChild>
           <Button size="sm" className="gap-1.5">
@@ -127,7 +136,7 @@ export function CreateTicketDialog({
           </Button>
         </DialogTrigger>
       )}
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="max-h-[min(90dvh,40rem)] overflow-y-auto sm:max-w-lg">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Create ticket</DialogTitle>
@@ -147,6 +156,15 @@ export function CreateTicketDialog({
                 placeholder="Describe the task, context, and expected outcome…"
                 className="min-h-[120px] resize-none"
                 required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Screenshots (optional)</Label>
+              <ScreenshotUploader
+                files={screenshots}
+                onChange={setScreenshots}
+                disabled={mutation.isPending}
               />
             </div>
 
@@ -225,7 +243,7 @@ export function CreateTicketDialog({
             <Button
               type="button"
               variant="outline"
-              onClick={() => setOpen(false)}
+              onClick={() => handleOpenChange(false)}
             >
               Cancel
             </Button>
