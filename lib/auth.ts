@@ -40,6 +40,27 @@ export function setAuthSession(
   localStorage.setItem(USER_KEY, JSON.stringify(user));
 }
 
+/**
+ * Merge a partial update (e.g. an onboarding resume-point response) into the
+ * stored user without touching tokens. Returns the merged user, or null if
+ * there's nothing stored yet.
+ */
+export function updateStoredUser(patch: Partial<AuthUser>): AuthUser | null {
+  const current = getStoredUser();
+  if (!current) return null;
+  const next = { ...current, ...patch };
+  if (isBrowser()) {
+    localStorage.setItem(USER_KEY, JSON.stringify(next));
+  }
+  return next;
+}
+
+/** Replace the stored user wholesale, e.g. with the AuthUser returned by accept-terms. */
+export function replaceStoredUser(user: AuthUser): void {
+  if (!isBrowser()) return;
+  localStorage.setItem(USER_KEY, JSON.stringify(user));
+}
+
 export function clearAuthSession(): void {
   if (!isBrowser()) return;
   localStorage.removeItem(ACCESS_TOKEN_KEY);
