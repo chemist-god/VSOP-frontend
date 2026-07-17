@@ -1,0 +1,112 @@
+/* Restyle driver.js to match VSOP's cool-slate OKLCH theme: soft blurred
+   overlay, glowing spotlight ring, and a popover that looks like native UI
+   rather than a generic tour library. */
+@import "driver.js/dist/driver.css";
+
+.driver-active-element {
+  border-radius: 14px !important;
+}
+
+.driver-overlay {
+  backdrop-filter: blur(3px) saturate(90%);
+}
+
+.vsop-tour-popover {
+  --tour-glow: color-mix(in oklch, var(--sidebar-primary), transparent 55%);
+  max-width: 320px;
+  border-radius: calc(var(--radius) + 6px) !important;
+  border: 1px solid var(--border) !important;
+  background: var(--popover) !important;
+  color: var(--popover-foreground) !important;
+  box-shadow:
+    0 0 0 1px color-mix(in oklch, var(--sidebar-primary), transparent 80%),
+    0 24px 48px -12px rgba(0, 0, 0, 0.55),
+    0 0 32px var(--tour-glow) !important;
+  padding: 16px !important;
+  animation: vsop-tour-in 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes vsop-tour-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.vsop-tour-popover .driver-popover-title {
+  color: var(--popover-foreground) !important;
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+  margin-bottom: 4px !important;
+}
+
+.vsop-tour-popover .driver-popover-description {
+  color: var(--muted-foreground) !important;
+  font-size: 0.8rem !important;
+  line-height: 1.5 !important;
+}
+
+.vsop-tour-popover .driver-popover-arrow-side-left.driver-popover-arrow,
+.vsop-tour-popover .driver-popover-arrow {
+  border-color: var(--popover) !important;
+}
+
+.vsop-tour-popover .driver-popover-footer {
+  margin-top: 14px !important;
+}
+
+.vsop-tour-popover .driver-popover-progress-text {
+  color: var(--muted-foreground) !important;
+  font-size: 0.7rem !important;
+}
+
+.vsop-tour-popover .driver-popover-navigation-btns {
+  gap: 8px !important;
+}
+
+.vsop-tour-popover button.driver-popover-close-btn {
+  display: none !important;
+}
+
+.vsop-tour-popover button.driver-popover-footer-btn {
+  all: unset;
+  flex: none !important;
+  box-sizing: border-box;
+  cursor: pointer;
+  border-radius: calc(var(--radius) - 2px) !important;
+  border: 1px solid transparent !important;
+  padding: 5px 12px !important;
+  font-size: 0.78rem !important;
+  font-weight: 500 !important;
+  line-height: 1.4;
+  text-shadow: none !important;
+  transition: filter 0.15s ease;
+}
+
+.vsop-tour-popover button.driver-popover-next-btn,
+.vsop-tour-popover button.driver-popover-done-btn {
+  background: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+}
+
+.vsop-tour-popover button.driver-popover-next-btn:hover,
+.vsop-tour-popover button.driver-popover-done-btn:hover {
+  filter: brightness(1.08);
+}
+
+.vsop-tour-popover button.driver-popover-prev-btn {
+  background: var(--secondary) !important;
+  color: var(--secondary-foreground) !important;
+}
+
+.vsop-tour-popover button.driver-popover-prev-btn:hover {
+  filter: brightness(1.08);
+}
+
+.vsop-tour-popover button.driver-popover-prev-btn.driver-popover-btn-disabled {
+  display: none !important;
+}
