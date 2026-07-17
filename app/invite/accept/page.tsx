@@ -6,6 +6,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Loader2, ShieldCheck } from "lucide-react";
 import { acceptInvite, previewInvite } from "@/lib/api/team";
 import { setAuthSession } from "@/lib/auth";
+import { needsOnboarding } from "@/lib/onboarding/needs-onboarding";
 import { toastError, toastSuccess } from "@/lib/toast";
 import { ApiError } from "@/lib/api";
 import { UserAvatar } from "@/components/vsop/shared/user-avatar";
@@ -47,7 +48,9 @@ function AcceptInviteForm() {
       toastSuccess("Welcome aboard", {
         description: "Your account is ready.",
       });
-      router.replace("/dashboard");
+      router.replace(
+        needsOnboarding(result.user) ? "/onboarding" : "/dashboard",
+      );
     },
     onError: (error) => {
       toastError(
