@@ -79,6 +79,7 @@ export interface CreateTicketInput {
   category?: TicketCategory;
   assigneeId?: string;
   dueDate?: string;
+  screenshots?: File[];
 }
 
 export const TICKET_STATUSES: TicketStatus[] = [
