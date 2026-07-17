@@ -11,6 +11,7 @@ import { Loader2 } from "lucide-react";
 import { login } from "@/lib/auth-api";
 import { ApiError } from "@/lib/api";
 import { toastError, toastSuccess } from "@/lib/toast";
+import { needsOnboarding } from "@/lib/onboarding/needs-onboarding";
 import { PasswordInput } from "@/components/vsop/auth/password-input";
 import { Button } from "@/components/ui/button";
 import {
@@ -51,7 +52,7 @@ export function LoginForm() {
       toastSuccess("Welcome back", {
         description: `Signed in as ${data.user.name}`,
       });
-      router.replace("/dashboard");
+      router.replace(needsOnboarding(data.user) ? "/onboarding" : "/dashboard");
     },
   });
 
