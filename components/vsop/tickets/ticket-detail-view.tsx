@@ -146,7 +146,7 @@ export function TicketDetailView({ ticketId }: { ticketId: string }) {
       </Button>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <TicketDetailHeader ticket={ticket} portal={portal} />
 
           <Card className="border-border/50 bg-card/40">
@@ -179,14 +179,7 @@ export function TicketDetailView({ ticketId }: { ticketId: string }) {
           ) : null}
 
           {ticket.browserInfo ? (
-            <Card className="border-border/50 bg-card/40">
-              <CardHeader>
-                <CardTitle className="text-base">Context metadata</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ContextMetadata browserInfo={ticket.browserInfo} />
-              </CardContent>
-            </Card>
+            <ContextMetadata browserInfo={ticket.browserInfo} />
           ) : null}
 
           <Card className="border-border/50 bg-card/40">
