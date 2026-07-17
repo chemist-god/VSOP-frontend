@@ -24,6 +24,10 @@ function submitRedirect(request: NextRequest) {
   return NextResponse.redirect(url);
 }
 
+function isIntakeAllowedPath(pathname: string) {
+  return pathname === "/submit" || pathname === "/api/intake";
+}
+
 export function proxy(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
 
@@ -55,18 +59,17 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Locked clients cannot open marketing, sign-in, or the internal dashboard.
-  if (
-    pathname === "/" ||
-    pathname === "/login" ||
-    pathname.startsWith("/dashboard")
-  ) {
-    return submitRedirect(request);
+  // Locked clients stay on intake only (plus the intake API).
+  if (isIntakeAllowedPath(pathname)) {
+    return NextResponse.next();
   }
 
-  return NextResponse.next();
+  return submitRedirect(request);
 }
 
 export const config = {
-  matcher: ["/", "/login", "/submit", "/dashboard/:path*"],
+  // Run on all page/API navigations; skip Next internals and static assets.
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|icon.svg|apple-icon.svg|images/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+  ],
 };
