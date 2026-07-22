@@ -7,6 +7,7 @@ import {
   AlertCircle,
   Bell,
   CheckCheck,
+  ClipboardCheck,
   Inbox,
   RefreshCw,
   UserPlus,
@@ -390,5 +391,6 @@ function TypeIcon({
   const cls = cn("size-3.5", className);
   if (type === "TICKET_ASSIGNED") return <UserPlus className={cls} />;
   if (type === "TICKET_RESOLVED") return <CircleCheck className={cls} />;
+  if (type === "TICKET_READY_FOR_REVIEW") return <ClipboardCheck className={cls} />;
   return <Bell className={cls} />;
 }
