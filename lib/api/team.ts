@@ -143,6 +143,18 @@ export interface TeamMemberDetail {
     ticketReferenceId: string;
     createdAt: string;
   }>;
+  contribution?: {
+    rangeDays: number;
+    startDate: string;
+    endDate: string;
+    total: number;
+    activeDays: number;
+    days: Array<{
+      date: string;
+      count: number;
+      level: 0 | 1 | 2 | 3 | 4;
+    }>;
+  };
 }
 
 export function fetchTeamMemberDetail(id: string) {
