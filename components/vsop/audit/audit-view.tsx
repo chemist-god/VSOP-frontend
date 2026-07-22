@@ -49,7 +49,7 @@ export function AuditView() {
     <div className="space-y-6 sm:space-y-8">
       <PageHeader
         title="Audit"
-        description="Activity timeline and operational insights across portals."
+        description="Activity timeline, portal operations, and team performance insights."
         actions={
           <Button
             variant="outline"
