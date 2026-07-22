@@ -11,6 +11,8 @@ import { queryKeys } from "@/lib/query-keys";
 import {
   TICKET_SEVERITIES,
   TICKET_STATUSES,
+  DEVELOPER_TICKET_STATUSES,
+  isClientFacingTicket,
   type TicketSeverity,
   type TicketStatus,
 } from "@/lib/types/tickets";
@@ -20,6 +22,7 @@ import { AssignTicketPanel } from "@/components/vsop/tickets/assign-ticket-panel
 import { ContextMetadata } from "@/components/vsop/tickets/context-metadata";
 import { DueCountdown } from "@/components/vsop/tickets/due-countdown";
 import { ResolveTicketDialog } from "@/components/vsop/tickets/resolve-ticket-dialog";
+import { SubmitForReviewDialog } from "@/components/vsop/tickets/submit-for-review-dialog";
 import { ScreenshotGallery } from "@/components/vsop/tickets/screenshot-gallery";
 import { TicketDetailHeader } from "@/components/vsop/tickets/ticket-detail-header";
 import { TicketNotesThread } from "@/components/vsop/tickets/ticket-notes-thread";
@@ -40,7 +43,7 @@ import { useAuthUser } from "@/hooks/use-auth-user";
 
 export function TicketDetailView({ ticketId }: { ticketId: string }) {
   const queryClient = useQueryClient();
-  const { isAdmin } = useAuthUser();
+  const { isAdmin, user } = useAuthUser();
 
   const ticketQuery = useQuery({
     queryKey: queryKeys.tickets.detail(ticketId),
@@ -76,6 +79,14 @@ export function TicketDetailView({ ticketId }: { ticketId: string }) {
   const activeAssignment = ticketQuery.data?.assignments.find(
     (assignment) => assignment.isActive,
   );
+
+  const isAssignee = Boolean(
+    user?.id && activeAssignment?.assigneeId === user.id,
+  );
+
+  const statusOptions = isAdmin
+    ? TICKET_STATUSES.filter((status) => status !== "RESOLVED")
+    : DEVELOPER_TICKET_STATUSES;
 
   const statusMutation = useMutation({
     mutationFn: (status: TicketStatus) => updateTicketStatus(ticketId, status),
@@ -135,6 +146,9 @@ export function TicketDetailView({ ticketId }: { ticketId: string }) {
   }
 
   const ticket = ticketQuery.data;
+  const selectableStatuses = statusOptions.includes(ticket.status)
+    ? statusOptions
+    : [...statusOptions, ticket.status];
 
   return (
     <div className="space-y-6">
@@ -168,14 +182,14 @@ export function TicketDetailView({ ticketId }: { ticketId: string }) {
           </Card>
 
           {ticket.screenshotUrls.length > 0 ? (
-          <Card className="border-border/50 bg-card/40">
-            <CardHeader>
-              <CardTitle className="text-base">Screenshots</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ScreenshotGallery urls={ticket.screenshotUrls} />
-            </CardContent>
-          </Card>
+            <Card className="border-border/50 bg-card/40">
+              <CardHeader>
+                <CardTitle className="text-base">Screenshots</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScreenshotGallery urls={ticket.screenshotUrls} />
+              </CardContent>
+            </Card>
           ) : null}
 
           {ticket.browserInfo ? (
@@ -206,16 +220,32 @@ export function TicketDetailView({ ticketId }: { ticketId: string }) {
                 <Label>Status</Label>
                 <Select
                   value={ticket.status}
-                  onValueChange={(value) =>
-                    statusMutation.mutate(value as TicketStatus)
-                  }
+                  onValueChange={(value) => {
+                    if (value === "RESOLVED") {
+                      toastError(
+                        isClientFacingTicket(ticket.source, ticket.portalId)
+                          ? "Use Mark resolved"
+                          : "Use Mark complete",
+                        {
+                          description: isClientFacingTicket(
+                            ticket.source,
+                            ticket.portalId,
+                          )
+                            ? "Resolve with a note so the client can be emailed."
+                            : "Complete the task with a short note from ticket controls.",
+                        },
+                      );
+                      return;
+                    }
+                    statusMutation.mutate(value as TicketStatus);
+                  }}
                   disabled={statusMutation.isPending}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {TICKET_STATUSES.map((status) => (
+                    {selectableStatuses.map((status) => (
                       <SelectItem key={status} value={status}>
                         {status.replaceAll("_", " ")}
                       </SelectItem>
@@ -275,13 +305,41 @@ export function TicketDetailView({ ticketId }: { ticketId: string }) {
               ) : null}
 
               {ticket.status !== "RESOLVED" && ticket.status !== "CLOSED" ? (
-                <ResolveTicketDialog ticketId={ticketId} />
+                <div className="space-y-2">
+                  {!isAdmin &&
+                    isAssignee &&
+                    ticket.status !== "PENDING_REVIEW" ? (
+                    <SubmitForReviewDialog ticketId={ticketId} />
+                  ) : null}
+                  {ticket.status === "PENDING_REVIEW" && !isAdmin ? (
+                    <p className="rounded-lg border border-border/50 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+                      Waiting for admin review. You can add notes if more
+                      context is needed.
+                    </p>
+                  ) : null}
+                  {ticket.status === "PENDING_REVIEW" && isAdmin ? (
+                    <p className="rounded-lg border border-violet-500/20 bg-violet-500/5 px-3 py-2 text-xs text-violet-200/90">
+                      {isClientFacingTicket(ticket.source, ticket.portalId)
+                        ? "Developer submitted this for review. Resolve to email the client, or move status back to In Progress if more work is needed."
+                        : "Developer submitted this internal task for review. Mark it complete, or move status back to In Progress if more work is needed."}
+                    </p>
+                  ) : null}
+                  {isAdmin ? (
+                    <ResolveTicketDialog
+                      ticketId={ticketId}
+                      source={ticket.source}
+                      portalId={ticket.portalId}
+                    />
+                  ) : null}
+                </div>
               ) : null}
 
               {ticket.resolutionNote ? (
                 <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-3">
                   <p className="text-xs uppercase tracking-wide text-emerald-300">
-                    Resolution
+                    {isClientFacingTicket(ticket.source, ticket.portalId)
+                      ? "Resolution"
+                      : "Completion note"}
                   </p>
                   <p className="mt-2 text-sm leading-relaxed">
                     {ticket.resolutionNote}
