@@ -1,11 +1,17 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, ExternalLink } from "lucide-react";
 import { fetchTeamMemberDetail } from "@/lib/api/team";
 import { queryKeys } from "@/lib/query-keys";
 import { formatDateTime, formatRelativeAge, truncate } from "@/lib/format";
+import {
+  GithubCalendar,
+  type ContributionData,
+  type ContributionLevel,
+} from "@/components/ui/github-calendar";
 import { UserAvatar } from "@/components/vsop/shared/user-avatar";
 import { DueCountdown } from "@/components/vsop/tickets/due-countdown";
 import { SeverityBadge } from "@/components/vsop/tickets/severity-badge";
@@ -25,6 +31,11 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+export type TeamMemberSheetTab =
+  | "assignments"
+  | "activity"
+  | "contributions";
+
 function actionLabel(action: string) {
   return action.replaceAll(".", " · ").replaceAll("_", " ");
 }
@@ -33,11 +44,19 @@ export function TeamMemberSheet({
   memberId,
   open,
   onOpenChange,
+  defaultTab = "assignments",
 }: {
   memberId: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  defaultTab?: TeamMemberSheetTab;
 }) {
+  const [tab, setTab] = useState<TeamMemberSheetTab>(defaultTab);
+
+  useEffect(() => {
+    if (open) setTab(defaultTab);
+  }, [open, memberId, defaultTab]);
+
   const detailQuery = useQuery({
     queryKey: queryKeys.team.detail(memberId ?? ""),
     queryFn: () => fetchTeamMemberDetail(memberId!),
@@ -46,13 +65,25 @@ export function TeamMemberSheet({
 
   const data = detailQuery.data;
 
+  const calendarData = useMemo(() => {
+    const days = data?.contribution?.days ?? [];
+    const map: ContributionData = {};
+    for (const day of days) {
+      map[day.date] = {
+        level: day.level as ContributionLevel,
+        count: day.count,
+      };
+    }
+    return map;
+  }, [data?.contribution?.days]);
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full gap-0 overflow-hidden p-0 sm:max-w-lg">
         <SheetHeader className="border-b border-border/50 px-5 py-4 text-left">
           <SheetTitle>Team member</SheetTitle>
           <SheetDescription>
-            Assignments and activity history for this developer.
+            Assignments, activity, and contribution patterns for this developer.
           </SheetDescription>
         </SheetHeader>
 
@@ -105,7 +136,7 @@ export function TeamMemberSheet({
                         variant="outline"
                         className={
                           data.member.isActive
-                            ? "border-emerald-500/30 text-emerald-300"
+                            ? "border-emerald-500/30 text-emerald-600 dark:text-emerald-300"
                             : ""
                         }
                       >
@@ -151,13 +182,31 @@ export function TeamMemberSheet({
                   ))}
                 </div>
 
-                <Tabs defaultValue="assignments" className="space-y-3">
-                  <TabsList className="w-full">
-                    <TabsTrigger value="assignments" className="flex-1">
+                <Tabs
+                  value={tab}
+                  onValueChange={(value) =>
+                    setTab(value as TeamMemberSheetTab)
+                  }
+                  className="space-y-3"
+                >
+                  <TabsList className="grid h-auto w-full grid-cols-3 gap-1 p-1">
+                    <TabsTrigger
+                      value="assignments"
+                      className="px-1.5 text-[11px] sm:text-xs"
+                    >
                       Assignments
                     </TabsTrigger>
-                    <TabsTrigger value="activity" className="flex-1">
+                    <TabsTrigger
+                      value="activity"
+                      className="px-1.5 text-[11px] sm:text-xs"
+                    >
                       Activity
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="contributions"
+                      className="px-1.5 text-[11px] sm:text-xs"
+                    >
+                      Contributions
                     </TabsTrigger>
                   </TabsList>
 
@@ -207,7 +256,7 @@ export function TeamMemberSheet({
                             className="mt-3"
                           />
                         ) : item.ticket.resolutionNote ? (
-                          <p className="mt-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-2.5 py-2 text-xs text-emerald-100/90">
+                          <p className="mt-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-2.5 py-2 text-xs text-emerald-800 dark:text-emerald-100/90">
                             {truncate(item.ticket.resolutionNote, 120)}
                           </p>
                         ) : null}
@@ -216,7 +265,7 @@ export function TeamMemberSheet({
                   </TabsContent>
 
                   <TabsContent value="activity" className="space-y-0">
-                    <div className="relative space-y-0 border-l border-border/50 ml-2 pl-4">
+                    <div className="relative ml-2 space-y-0 border-l border-border/50 pl-4">
                       {data.activity.length === 0 && data.notes.length === 0 ? (
                         <p className="text-sm text-muted-foreground">
                           No activity recorded yet.
@@ -250,7 +299,10 @@ export function TeamMemberSheet({
                         )
                         .slice(0, 30)
                         .map((event) => (
-                          <div key={`${event.kind}-${event.id}`} className="relative pb-5">
+                          <div
+                            key={`${event.kind}-${event.id}`}
+                            className="relative pb-5"
+                          >
                             <span className="absolute -left-[21px] top-1.5 size-2.5 rounded-full border border-background bg-indigo-400" />
                             <div className="flex flex-wrap items-center gap-2">
                               <Badge variant="outline" className="text-[10px]">
@@ -277,6 +329,62 @@ export function TeamMemberSheet({
                           </div>
                         ))}
                     </div>
+                  </TabsContent>
+
+                  <TabsContent value="contributions" className="space-y-3">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">
+                        Activity heatmap
+                      </p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        Assignments, status changes, resolves, and notes over
+                        the last {data.contribution?.rangeDays ?? 112} days.
+                        Scroll sideways on smaller screens.
+                      </p>
+                    </div>
+
+                    {data.contribution ? (
+                      <>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="rounded-xl border border-border/50 bg-card/50 px-3 py-2.5">
+                            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                              Contributions
+                            </p>
+                            <p className="mt-1 text-lg font-semibold tabular-nums">
+                              {data.contribution.total.toLocaleString()}
+                            </p>
+                          </div>
+                          <div className="rounded-xl border border-border/50 bg-card/50 px-3 py-2.5">
+                            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                              Active days
+                            </p>
+                            <p className="mt-1 text-lg font-semibold tabular-nums">
+                              {data.contribution.activeDays.toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+
+                        <GithubCalendar
+                          data={calendarData}
+                          startDate={data.contribution.startDate}
+                          endDate={data.contribution.endDate}
+                          theme="vsop"
+                          cellSize={11}
+                          cellGap={3}
+                          cellShape="rounded"
+                          startsOnSunday
+                          showMonthLabels
+                          showLegend
+                          showStats
+                          statsLabel="ops actions in this range"
+                          className="border-border/40"
+                        />
+                      </>
+                    ) : (
+                      <p className="rounded-xl border border-dashed border-border/60 px-4 py-10 text-center text-sm text-muted-foreground">
+                        Contribution data is unavailable for this member yet.
+                      </p>
+                    )}
                   </TabsContent>
                 </Tabs>
               </>
