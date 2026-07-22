@@ -1,7 +1,8 @@
 export type InboxNotificationType =
   | "TICKET_CREATED"
   | "TICKET_ASSIGNED"
-  | "TICKET_RESOLVED";
+  | "TICKET_RESOLVED"
+  | "TICKET_READY_FOR_REVIEW";
 
 export interface InboxNotification {
   id: string;
