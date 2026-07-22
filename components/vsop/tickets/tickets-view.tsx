@@ -94,7 +94,9 @@ export function TicketsView() {
       open: tickets.filter((ticket) => ticket.status === "OPEN").length,
       inProgress: tickets.filter((ticket) => ticket.status === "IN_PROGRESS")
         .length,
-      internal: tickets.filter((ticket) => ticket.source === "INTERNAL").length,
+      pendingReview: tickets.filter(
+        (ticket) => ticket.status === "PENDING_REVIEW",
+      ).length,
       urgent: tickets.filter(
         (ticket) =>
           ticket.severity === "CRITICAL" || ticket.severity === "HIGH",
@@ -149,9 +151,9 @@ export function TicketsView() {
             tone: "text-blue-600 dark:text-blue-400",
           },
           {
-            label: "Internal tasks",
-            value: stats.internal,
-            tone: "text-foreground",
+            label: "Pending review",
+            value: stats.pendingReview,
+            tone: "text-violet-600 dark:text-violet-400",
           },
           {
             label: "Urgent",
