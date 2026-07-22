@@ -30,6 +30,29 @@ export interface AuditListResponse {
   totalPages: number;
 }
 
+export interface InsightsTeamMember {
+  userId: string;
+  name: string;
+  email: string;
+  role: string;
+  isActive: boolean;
+  openAssigned: number;
+  resolvedInRange: number;
+  overdue: number;
+  mttrHours: number | null;
+}
+
+export interface InsightsTeamPayload {
+  kpis: {
+    openAssigned: number;
+    resolvedInRange: number;
+    overdue: number;
+    avgMttrHours: number | null;
+  };
+  trend: Array<{ date: string; resolved: number }>;
+  byMember: InsightsTeamMember[];
+}
+
 export interface InsightsPayload {
   totals: {
     tickets: number;
@@ -49,6 +72,7 @@ export interface InsightsPayload {
   }>;
   trendDays?: number;
   trend: Array<{ date: string; created: number; resolved: number }>;
+  team?: InsightsTeamPayload;
 }
 
 export function fetchAuditLogs(page = 1, pageSize = 20) {
