@@ -59,6 +59,7 @@ export interface InsightsPayload {
     resolvedLast7Days: number;
     open: number;
     inProgress: number;
+    pendingReview?: number;
     resolved: number;
     closed: number;
   };
