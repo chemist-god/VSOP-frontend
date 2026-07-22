@@ -21,6 +21,11 @@ const COLUMN_META: Record<
     dot: "bg-orange-500",
     ring: "ring-orange-500/30",
   },
+  PENDING_REVIEW: {
+    title: "Pending Review",
+    dot: "bg-violet-500",
+    ring: "ring-violet-500/30",
+  },
   RESOLVED: {
     title: "Complete",
     dot: "bg-emerald-500",
