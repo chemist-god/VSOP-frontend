@@ -17,6 +17,8 @@ import {
 } from "recharts";
 import { AlertCircle, Info, Ticket } from "lucide-react";
 import type { InsightsPayload, InsightsTrendDays } from "@/lib/api/audit";
+import { TeamInsightsPanel } from "@/components/vsop/audit/team-insights-panel";
+import { TeamMemberSheet } from "@/components/vsop/team/team-member-sheet";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Select,
@@ -26,7 +28,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+
+type InsightsLens = "operations" | "team";
 
 const SEVERITY_COLORS: Record<string, string> = {
   CRITICAL: "#f87171",
@@ -186,7 +191,13 @@ export function InsightsPanel({
   onTrendDaysChange,
   onRetry,
 }: InsightsPanelProps) {
+  const [lens, setLens] = useState<InsightsLens>("operations");
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [activeSeverity, setActiveSeverity] = useState<string | null>(null);
+
+  const rangeLabel =
+    TREND_RANGES.find((range) => range.value === trendDays)?.label ??
+    `Last ${trendDays} days`;
 
   const kpis = useMemo(() => {
     if (!data) return [];
@@ -254,30 +265,76 @@ export function InsightsPanel({
     [data],
   );
 
+  const toolbar = (
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <Tabs
+        value={lens}
+        onValueChange={(value) => setLens(value as InsightsLens)}
+      >
+        <TabsList className="h-9 w-full rounded-xl bg-muted/70 p-1 sm:w-auto">
+          <TabsTrigger value="operations" className="flex-1 rounded-lg px-3 sm:flex-none">
+            Operations
+          </TabsTrigger>
+          <TabsTrigger value="team" className="flex-1 rounded-lg px-3 sm:flex-none">
+            Team
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      <Select
+        value={String(trendDays)}
+        onValueChange={(value) =>
+          onTrendDaysChange(Number(value) as InsightsTrendDays)
+        }
+      >
+        <SelectTrigger
+          size="sm"
+          className="h-8 w-full rounded-lg border-border/60 bg-background/40 px-2.5 text-xs font-medium text-muted-foreground shadow-none sm:w-auto sm:min-w-[8.5rem]"
+        >
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent align="end" className="min-w-[9rem]">
+          {TREND_RANGES.map((range) => (
+            <SelectItem
+              key={range.value}
+              value={String(range.value)}
+              className="text-xs"
+            >
+              {range.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+
   if (isLoading) {
     return (
-      <div className="grid gap-4 xl:grid-cols-3">
-        <div className="space-y-4 rounded-2xl border border-border/50 bg-card/40 p-5 xl:col-span-2 sm:p-6">
-          <div className="flex items-center justify-between">
-            <Skeleton className="h-5 w-36" />
-            <Skeleton className="h-8 w-28 rounded-lg" />
+      <div className="space-y-4">
+        {toolbar}
+        <div className="grid gap-4 xl:grid-cols-3">
+          <div className="space-y-4 rounded-2xl border border-border/50 bg-card/40 p-5 xl:col-span-2 sm:p-6">
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-5 w-36" />
+              <Skeleton className="h-8 w-28 rounded-lg" />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-20 rounded-xl" />
+              ))}
+            </div>
+            <Skeleton className="h-64 w-full rounded-xl" />
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-20 rounded-xl" />
-            ))}
+          <div className="space-y-4 rounded-2xl border border-border/50 bg-card/40 p-5 sm:p-6">
+            <Skeleton className="h-5 w-28" />
+            <Skeleton className="h-10 w-40" />
+            <Skeleton className="mx-auto size-48 rounded-full" />
+            <Skeleton className="h-20 w-full rounded-xl" />
           </div>
-          <Skeleton className="h-64 w-full rounded-xl" />
-        </div>
-        <div className="space-y-4 rounded-2xl border border-border/50 bg-card/40 p-5 sm:p-6">
-          <Skeleton className="h-5 w-28" />
-          <Skeleton className="h-10 w-40" />
-          <Skeleton className="mx-auto size-48 rounded-full" />
-          <Skeleton className="h-20 w-full rounded-xl" />
-        </div>
-        <div className="rounded-2xl border border-border/50 bg-card/40 p-5 xl:col-span-3 sm:p-6">
-          <Skeleton className="mb-4 h-5 w-40" />
-          <Skeleton className="h-56 w-full rounded-xl" />
+          <div className="rounded-2xl border border-border/50 bg-card/40 p-5 xl:col-span-3 sm:p-6">
+            <Skeleton className="mb-4 h-5 w-40" />
+            <Skeleton className="h-56 w-full rounded-xl" />
+          </div>
         </div>
       </div>
     );
@@ -285,28 +342,54 @@ export function InsightsPanel({
 
   if (isError) {
     return (
-      <Alert variant="destructive">
-        <AlertCircle />
-        <AlertDescription className="flex flex-wrap items-center gap-3">
-          Could not load insights. Check your connection and try again.
-          {onRetry ? (
-            <button
-              type="button"
-              onClick={onRetry}
-              className="text-sm font-medium underline underline-offset-2"
-            >
-              Retry
-            </button>
-          ) : null}
-        </AlertDescription>
-      </Alert>
+      <div className="space-y-4">
+        {toolbar}
+        <Alert variant="destructive">
+          <AlertCircle />
+          <AlertDescription className="flex flex-wrap items-center gap-3">
+            Could not load insights. Check your connection and try again.
+            {onRetry ? (
+              <button
+                type="button"
+                onClick={onRetry}
+                className="text-sm font-medium underline underline-offset-2"
+              >
+                Retry
+              </button>
+            ) : null}
+          </AlertDescription>
+        </Alert>
+      </div>
     );
   }
 
   if (!data) return null;
 
+  if (lens === "team") {
+    return (
+      <div className="space-y-4">
+        {toolbar}
+        <TeamInsightsPanel
+          data={data.team}
+          rangeLabel={rangeLabel}
+          onSelectMember={setSelectedMemberId}
+        />
+        <TeamMemberSheet
+          memberId={selectedMemberId}
+          open={Boolean(selectedMemberId)}
+          onOpenChange={(open) => {
+            if (!open) setSelectedMemberId(null);
+          }}
+          defaultTab="contributions"
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className="grid gap-4 xl:grid-cols-3">
+    <div className="space-y-4">
+      {toolbar}
+      <div className="grid gap-4 xl:grid-cols-3">
       {/* Primary: volume + KPIs + trend */}
       <section className="flex flex-col gap-6 rounded-2xl border border-border/50 bg-card/50 p-5 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)] xl:col-span-2 sm:p-6">
         <header className="flex flex-wrap items-center justify-between gap-3">
@@ -318,41 +401,15 @@ export function InsightsPanel({
               Open pipeline and recent resolution activity
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5">
-                <span className="size-1.5 rounded-full bg-[#818cf8]" />
-                Created
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <span className="size-1.5 rounded-full bg-[#34d399]" />
-                Resolved
-              </span>
-            </div>
-            <Select
-              value={String(trendDays)}
-              onValueChange={(value) =>
-                onTrendDaysChange(Number(value) as InsightsTrendDays)
-              }
-            >
-              <SelectTrigger
-                size="sm"
-                className="h-8 w-auto min-w-[8.5rem] rounded-lg border-border/60 bg-background/40 px-2.5 text-xs font-medium text-muted-foreground shadow-none"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent align="end" className="min-w-[9rem]">
-                {TREND_RANGES.map((range) => (
-                  <SelectItem
-                    key={range.value}
-                    value={String(range.value)}
-                    className="text-xs"
-                  >
-                    {range.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="size-1.5 rounded-full bg-[#818cf8]" />
+              Created
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="size-1.5 rounded-full bg-[#34d399]" />
+              Resolved
+            </span>
           </div>
         </header>
 
@@ -640,6 +697,7 @@ export function InsightsPanel({
           </div>
         )}
       </section>
+      </div>
     </div>
   );
 }
