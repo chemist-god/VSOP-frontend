@@ -83,8 +83,25 @@ export function assignTicket(
   });
 }
 
+export function submitTicketForReview(id: string, reviewNote: string) {
+  return apiFetch<{ id: string; status: TicketStatus; noteId: string }>(
+    `/tickets/${id}/submit-for-review`,
+    {
+      method: "POST",
+      body: JSON.stringify({ reviewNote }),
+    },
+  );
+}
+
 export function resolveTicket(id: string, resolutionNote: string) {
-  return apiFetch(`/tickets/${id}/resolve`, {
+  return apiFetch<{
+    id: string;
+    status: TicketStatus;
+    resolutionNote: string;
+    resolvedAt: string | null;
+    alreadyResolved: boolean;
+    clientNotified: boolean;
+  }>(`/tickets/${id}/resolve`, {
     method: "POST",
     body: JSON.stringify({ resolutionNote }),
   });
