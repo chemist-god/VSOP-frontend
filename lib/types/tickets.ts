@@ -1,6 +1,7 @@
 export type TicketStatus =
   | "OPEN"
   | "IN_PROGRESS"
+  | "PENDING_REVIEW"
   | "RESOLVED"
   | "CLOSED";
 
@@ -85,8 +86,16 @@ export interface CreateTicketInput {
 export const TICKET_STATUSES: TicketStatus[] = [
   "OPEN",
   "IN_PROGRESS",
+  "PENDING_REVIEW",
   "RESOLVED",
   "CLOSED",
+];
+
+/** Statuses a developer may set via the status control / board. */
+export const DEVELOPER_TICKET_STATUSES: TicketStatus[] = [
+  "OPEN",
+  "IN_PROGRESS",
+  "PENDING_REVIEW",
 ];
 
 export const TICKET_SEVERITIES: TicketSeverity[] = [
@@ -98,3 +107,14 @@ export const TICKET_SEVERITIES: TicketSeverity[] = [
 ];
 
 export const TICKET_SOURCES: TicketSource[] = ["INTAKE", "INTERNAL"];
+
+/**
+ * Client-facing close: portal intake, or internal work linked to a company portal.
+ * Pure internal todos (no portal) complete without client email language.
+ */
+export function isClientFacingTicket(
+  source: TicketSource,
+  portalId: string | null | undefined,
+): boolean {
+  return source === "INTAKE" || Boolean(portalId);
+}
